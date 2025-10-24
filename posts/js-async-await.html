@@ -1,0 +1,1082 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JavaScript bất đồng bộ: Promise & async/await</title>
+    <meta name="description" content="Cách viết code async gọn gàng và tránh callback hell.">
+    <link rel="stylesheet" href="../css/styles.css">
+  </head>
+  <body>
+    <main class="container post">
+      <a class="back" href="../blog.html">← Quay lại Blog</a>
+      <h1>JavaScript bất đồng bộ: Promise & async/await</h1>
+      <div class="meta">Chủ đề: <span class="tag tag-js">JavaScript</span></div>
+      <article class="card">
+        <h2>Giới thiệu về Asynchronous JavaScript</h2>
+        <p>
+          JavaScript là single-threaded language, nhưng có thể xử lý các tác vụ bất đồng bộ thông qua 
+          Event Loop, Callbacks, Promises và async/await. Việc hiểu và sử dụng đúng các công cụ này 
+          giúp viết code hiệu quả và dễ bảo trì.
+        </p>
+        
+        <h2>Callback Hell và Promise</h2>
+        
+        <h3>1. Callback Hell Problem</h3>
+        <pre><code>// Callback Hell - Nested callbacks
+function getUserData(userId, callback) {
+    setTimeout(() => {
+        const user = { id: userId, name: 'John' };
+        callback(null, user);
+    }, 1000);
+}
+
+function getUserPosts(userId, callback) {
+    setTimeout(() => {
+        const posts = [{ id: 1, title: 'Post 1' }, { id: 2, title: 'Post 2' }];
+        callback(null, posts);
+    }, 1000);
+}
+
+function getUserComments(postId, callback) {
+    setTimeout(() => {
+        const comments = [{ id: 1, text: 'Comment 1' }];
+        callback(null, comments);
+    }, 1000);
+}
+
+// Callback hell - Hard to read and maintain
+getUserData(1, (err, user) => {
+    if (err) {
+        console.error('Error getting user:', err);
+        return;
+    }
+    
+    getUserPosts(user.id, (err, posts) => {
+        if (err) {
+            console.error('Error getting posts:', err);
+            return;
+        }
+        
+        getUserComments(posts[0].id, (err, comments) => {
+            if (err) {
+                console.error('Error getting comments:', err);
+                return;
+            }
+            
+            console.log('User:', user);
+            console.log('Posts:', posts);
+            console.log('Comments:', comments);
+        });
+    });
+});</code></pre>
+        
+        <h3>2. Promise Solution</h3>
+        <pre><code>// Promise-based approach
+function getUserDataPromise(userId) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            const user = { id: userId, name: 'John' };
+            resolve(user);
+        }, 1000);
+    });
+}
+
+function getUserPostsPromise(userId) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            const posts = [{ id: 1, title: 'Post 1' }, { id: 2, title: 'Post 2' }];
+            resolve(posts);
+        }, 1000);
+    });
+}
+
+function getUserCommentsPromise(postId) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            const comments = [{ id: 1, text: 'Comment 1' }];
+            resolve(comments);
+        }, 1000);
+    });
+}
+
+// Promise chaining - Better than callbacks
+getUserDataPromise(1)
+    .then(user => {
+        console.log('User:', user);
+        return getUserPostsPromise(user.id);
+    })
+    .then(posts => {
+        console.log('Posts:', posts);
+        return getUserCommentsPromise(posts[0].id);
+    })
+    .then(comments => {
+        console.log('Comments:', comments);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });</code></pre>
+        
+        <h2>Async/Await Fundamentals</h2>
+        
+        <h3>1. Basic Async/Await</h3>
+        <pre><code>// Async function declaration
+async function fetchUserData(userId) {
+    try {
+        const user = await getUserDataPromise(userId);
+        const posts = await getUserPostsPromise(user.id);
+        const comments = await getUserCommentsPromise(posts[0].id);
+        
+        return {
+            user,
+            posts,
+            comments
+        };
+    } catch (error) {
+        console.error('Error fetching user data:', error);
+        throw error;
+    }
+}
+
+// Using async function
+fetchUserData(1)
+    .then(data => {
+        console.log('Complete data:', data);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+
+// Async arrow function
+const fetchUserDataArrow = async (userId) => {
+    const user = await getUserDataPromise(userId);
+    return user;
+};
+
+// Async method in class
+class UserService {
+    async getUserById(id) {
+        const user = await getUserDataPromise(id);
+        return user;
+    }
+    
+    async getUserWithPosts(id) {
+        const user = await this.getUserById(id);
+        const posts = await getUserPostsPromise(user.id);
+        return { user, posts };
+    }
+}</code></pre>
+        
+        <h3>2. Error Handling</h3>
+        <pre><code>// Error handling with try/catch
+async function fetchDataWithErrorHandling(url) {
+    try {
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Fetch error:', error);
+        
+        // Re-throw error or return default value
+        throw error;
+        // OR return default value
+        // return { error: true, message: error.message };
+    }
+}
+
+// Multiple error handling strategies
+async function robustDataFetch(url) {
+    try {
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        return { success: true, data };
+        
+    } catch (error) {
+        if (error.name === 'TypeError') {
+            // Network error
+            return { success: false, error: 'Network error', data: null };
+        } else if (error.name === 'SyntaxError') {
+            // JSON parsing error
+            return { success: false, error: 'Invalid JSON', data: null };
+        } else {
+            // Other errors
+            return { success: false, error: error.message, data: null };
+        }
+    }
+}
+
+// Error handling with Promise.catch
+async function fetchWithCatch(url) {
+    const response = await fetch(url).catch(error => {
+        console.error('Network error:', error);
+        return null;
+    });
+    
+    if (!response) {
+        return null;
+    }
+    
+    return response.json();
+}</code></pre>
+        
+        <h2>Parallel Execution</h2>
+        
+        <h3>1. Promise.all - Wait for All</h3>
+        <pre><code>// Sequential execution - Slow
+async function fetchSequential() {
+    const start = Date.now();
+    
+    const user = await getUserDataPromise(1);
+    const posts = await getUserPostsPromise(1);
+    const comments = await getUserCommentsPromise(1);
+    
+    const end = Date.now();
+    console.log(`Sequential took: ${end - start}ms`); // ~3000ms
+    
+    return { user, posts, comments };
+}
+
+// Parallel execution - Fast
+async function fetchParallel() {
+    const start = Date.now();
+    
+    const [user, posts, comments] = await Promise.all([
+        getUserDataPromise(1),
+        getUserPostsPromise(1),
+        getUserCommentsPromise(1)
+    ]);
+    
+    const end = Date.now();
+    console.log(`Parallel took: ${end - start}ms`); // ~1000ms
+    
+    return { user, posts, comments };
+}
+
+// Promise.all with error handling
+async function fetchParallelWithErrorHandling() {
+    try {
+        const [user, posts, comments] = await Promise.all([
+            getUserDataPromise(1),
+            getUserPostsPromise(1),
+            getUserCommentsPromise(1)
+        ]);
+        
+        return { user, posts, comments };
+    } catch (error) {
+        console.error('One or more requests failed:', error);
+        // All promises fail if any one fails
+        throw error;
+    }
+}
+
+// Promise.allSettled - Wait for all, regardless of success/failure
+async function fetchAllSettled() {
+    const results = await Promise.allSettled([
+        getUserDataPromise(1),
+        getUserPostsPromise(1),
+        getUserCommentsPromise(1)
+    ]);
+    
+    const successful = results
+        .filter(result => result.status === 'fulfilled')
+        .map(result => result.value);
+    
+    const failed = results
+        .filter(result => result.status === 'rejected')
+        .map(result => result.reason);
+    
+    return { successful, failed };
+}</code></pre>
+        
+        <h3>2. Promise.race - First to Complete</h3>
+        <pre><code>// Promise.race - Get first result
+async function fetchWithTimeout(url, timeout = 5000) {
+    const fetchPromise = fetch(url);
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout')), timeout);
+    });
+    
+    try {
+        const response = await Promise.race([fetchPromise, timeoutPromise]);
+        return response.json();
+    } catch (error) {
+        console.error('Request failed or timed out:', error);
+        throw error;
+    }
+}
+
+// Race between multiple APIs
+async function fetchFromMultipleSources(userId) {
+    const api1 = getUserDataPromise(userId);
+    const api2 = getUserDataPromise(userId); // Alternative API
+    const api3 = getUserDataPromise(userId); // Backup API
+    
+    try {
+        const user = await Promise.race([api1, api2, api3]);
+        console.log('Got user data from fastest API');
+        return user;
+    } catch (error) {
+        console.error('All APIs failed:', error);
+        throw error;
+    }
+}
+
+// Race with cleanup
+async function fetchWithCleanup(url) {
+    const controller = new AbortController();
+    const signal = controller.signal;
+    
+    const fetchPromise = fetch(url, { signal });
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+            controller.abort();
+            reject(new Error('Request aborted'));
+        }, 5000);
+    });
+    
+    try {
+        const response = await Promise.race([fetchPromise, timeoutPromise]);
+        return response.json();
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            console.log('Request was aborted');
+        }
+        throw error;
+    }
+}</code></pre>
+        
+        <h2>Advanced Async Patterns</h2>
+        
+        <h3>1. Retry Pattern</h3>
+        <pre><code>// Retry with exponential backoff
+async function retryWithBackoff(fn, maxRetries = 3, baseDelay = 1000) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            return await fn();
+        } catch (error) {
+            if (attempt === maxRetries) {
+                throw error;
+            }
+            
+            const delay = baseDelay * Math.pow(2, attempt - 1);
+            console.log(`Attempt ${attempt} failed, retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+}
+
+// Usage
+async function fetchWithRetry(url) {
+    return retryWithBackoff(async () => {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return response.json();
+    });
+}
+
+// Retry with jitter
+async function retryWithJitter(fn, maxRetries = 3, baseDelay = 1000) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            return await fn();
+        } catch (error) {
+            if (attempt === maxRetries) {
+                throw error;
+            }
+            
+            // Add jitter to prevent thundering herd
+            const jitter = Math.random() * 1000;
+            const delay = baseDelay * Math.pow(2, attempt - 1) + jitter;
+            
+            console.log(`Attempt ${attempt} failed, retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+}</code></pre>
+        
+        <h3>2. Circuit Breaker Pattern</h3>
+        <pre><code>class CircuitBreaker {
+    constructor(threshold = 5, timeout = 60000) {
+        this.failureThreshold = threshold;
+        this.timeout = timeout;
+        this.failureCount = 0;
+        this.lastFailureTime = null;
+        this.state = 'CLOSED'; // CLOSED, OPEN, HALF_OPEN
+    }
+    
+    async execute(fn) {
+        if (this.state === 'OPEN') {
+            if (Date.now() - this.lastFailureTime > this.timeout) {
+                this.state = 'HALF_OPEN';
+            } else {
+                throw new Error('Circuit breaker is OPEN');
+            }
+        }
+        
+        try {
+            const result = await fn();
+            this.onSuccess();
+            return result;
+        } catch (error) {
+            this.onFailure();
+            throw error;
+        }
+    }
+    
+    onSuccess() {
+        this.failureCount = 0;
+        this.state = 'CLOSED';
+    }
+    
+    onFailure() {
+        this.failureCount++;
+        this.lastFailureTime = Date.now();
+        
+        if (this.failureCount >= this.failureThreshold) {
+            this.state = 'OPEN';
+        }
+    }
+}
+
+// Usage
+const circuitBreaker = new CircuitBreaker();
+
+async function fetchWithCircuitBreaker(url) {
+    return circuitBreaker.execute(async () => {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return response.json();
+    });
+}</code></pre>
+        
+        <h3>3. Batch Processing</h3>
+        <pre><code>// Process items in batches
+async function processBatch(items, batchSize = 5, processor) {
+    const results = [];
+    
+    for (let i = 0; i < items.length; i += batchSize) {
+        const batch = items.slice(i, i + batchSize);
+        
+        try {
+            const batchResults = await Promise.all(
+                batch.map(item => processor(item))
+            );
+            results.push(...batchResults);
+        } catch (error) {
+            console.error(`Batch ${i / batchSize + 1} failed:`, error);
+            // Continue with next batch or throw error
+        }
+    }
+    
+    return results;
+}
+
+// Usage
+async function fetchUserDetails(userIds) {
+    return processBatch(userIds, 3, async (userId) => {
+        const response = await fetch(`/api/users/${userId}`);
+        return response.json();
+    });
+}
+
+// Sequential batch processing
+async function processBatchSequential(items, batchSize = 5, processor) {
+    const results = [];
+    
+    for (let i = 0; i < items.length; i += batchSize) {
+        const batch = items.slice(i, i + batchSize);
+        
+        for (const item of batch) {
+            try {
+                const result = await processor(item);
+                results.push(result);
+            } catch (error) {
+                console.error(`Item ${item} failed:`, error);
+                // Continue with next item
+            }
+        }
+    }
+    
+    return results;
+}</code></pre>
+        
+        <h2>AbortController và Cancellation</h2>
+        
+        <h3>1. Basic AbortController</h3>
+        <pre><code>// Basic abort controller
+async function fetchWithAbort(url, signal) {
+    try {
+        const response = await fetch(url, { signal });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        return response.json();
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            console.log('Request was aborted');
+            return null;
+        }
+        throw error;
+    }
+}
+
+// Usage
+const controller = new AbortController();
+const signal = controller.signal;
+
+fetchWithAbort('/api/data', signal)
+    .then(data => {
+        if (data) {
+            console.log('Data received:', data);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+
+// Abort after 5 seconds
+setTimeout(() => {
+    controller.abort();
+}, 5000);
+
+// Abort on user action
+document.getElementById('cancelButton').addEventListener('click', () => {
+    controller.abort();
+});</code></pre>
+        
+        <h3>2. Advanced Cancellation</h3>
+        <pre><code>// Cancellable async function
+class CancellableOperation {
+    constructor() {
+        this.controller = new AbortController();
+        this.signal = this.controller.signal;
+    }
+    
+    async execute(fn) {
+        if (this.signal.aborted) {
+            throw new Error('Operation was cancelled');
+        }
+        
+        return fn(this.signal);
+    }
+    
+    cancel() {
+        this.controller.abort();
+    }
+}
+
+// Usage
+const operation = new CancellableOperation();
+
+operation.execute(async (signal) => {
+    const response = await fetch('/api/data', { signal });
+    return response.json();
+})
+.then(data => console.log('Data:', data))
+.catch(error => {
+    if (error.name === 'AbortError') {
+        console.log('Operation cancelled');
+    } else {
+        console.error('Error:', error);
+    }
+});
+
+// Cancel after 3 seconds
+setTimeout(() => {
+    operation.cancel();
+}, 3000);
+
+// Multiple cancellable operations
+class OperationManager {
+    constructor() {
+        this.operations = new Map();
+    }
+    
+    createOperation(id) {
+        const operation = new CancellableOperation();
+        this.operations.set(id, operation);
+        return operation;
+    }
+    
+    cancelOperation(id) {
+        const operation = this.operations.get(id);
+        if (operation) {
+            operation.cancel();
+            this.operations.delete(id);
+        }
+    }
+    
+    cancelAll() {
+        for (const operation of this.operations.values()) {
+            operation.cancel();
+        }
+        this.operations.clear();
+    }
+}</code></pre>
+        
+        <h2>Async Iteration</h2>
+        
+        <h3>1. Async Generators</h3>
+        <pre><code>// Async generator for paginated data
+async function* fetchPaginatedData(url, pageSize = 10) {
+    let page = 1;
+    let hasMore = true;
+    
+    while (hasMore) {
+        try {
+            const response = await fetch(`${url}?page=${page}&size=${pageSize}`);
+            const data = await response.json();
+            
+            if (data.items.length === 0) {
+                hasMore = false;
+            } else {
+                yield data.items;
+                page++;
+            }
+        } catch (error) {
+            console.error('Error fetching page:', error);
+            hasMore = false;
+        }
+    }
+}
+
+// Usage
+async function processAllPages() {
+    for await (const page of fetchPaginatedData('/api/users')) {
+        console.log('Processing page:', page);
+        // Process each page
+    }
+}
+
+// Async generator with cleanup
+async function* fetchWithCleanup(url) {
+    const controller = new AbortController();
+    
+    try {
+        let page = 1;
+        while (true) {
+            const response = await fetch(`${url}?page=${page}`, {
+                signal: controller.signal
+            });
+            
+            const data = await response.json();
+            yield data;
+            
+            if (!data.hasMore) break;
+            page++;
+        }
+    } finally {
+        controller.abort();
+    }
+}</code></pre>
+        
+        <h3>2. Async Iterators</h3>
+        <pre><code>// Custom async iterable
+class AsyncDataStream {
+    constructor(dataSource) {
+        this.dataSource = dataSource;
+        this.index = 0;
+    }
+    
+    async *[Symbol.asyncIterator]() {
+        while (this.index < this.dataSource.length) {
+            // Simulate async data processing
+            await new Promise(resolve => setTimeout(resolve, 100));
+            yield this.dataSource[this.index++];
+        }
+    }
+}
+
+// Usage
+const dataStream = new AsyncDataStream([1, 2, 3, 4, 5]);
+
+async function processStream() {
+    for await (const item of dataStream) {
+        console.log('Processing item:', item);
+    }
+}
+
+// Async iterator with error handling
+class RobustAsyncIterator {
+    constructor(dataSource) {
+        this.dataSource = dataSource;
+        this.index = 0;
+    }
+    
+    async *[Symbol.asyncIterator]() {
+        while (this.index < this.dataSource.length) {
+            try {
+                const item = await this.processItem(this.dataSource[this.index]);
+                yield item;
+            } catch (error) {
+                console.error(`Error processing item ${this.index}:`, error);
+                // Skip failed item and continue
+            }
+            this.index++;
+        }
+    }
+    
+    async processItem(item) {
+        // Simulate processing that might fail
+        if (Math.random() < 0.2) {
+            throw new Error('Processing failed');
+        }
+        return item * 2;
+    }
+}</code></pre>
+        
+        <h2>Performance Optimization</h2>
+        
+        <h3>1. Caching và Memoization</h3>
+        <pre><code>// Simple cache
+class AsyncCache {
+    constructor(ttl = 60000) { // 1 minute default
+        this.cache = new Map();
+        this.ttl = ttl;
+    }
+    
+    async get(key, fetcher) {
+        const cached = this.cache.get(key);
+        
+        if (cached && Date.now() - cached.timestamp < this.ttl) {
+            return cached.value;
+        }
+        
+        const value = await fetcher();
+        this.cache.set(key, {
+            value,
+            timestamp: Date.now()
+        });
+        
+        return value;
+    }
+    
+    clear() {
+        this.cache.clear();
+    }
+    
+    delete(key) {
+        this.cache.delete(key);
+    }
+}
+
+// Usage
+const cache = new AsyncCache();
+
+async function fetchUserData(userId) {
+    return cache.get(`user-${userId}`, async () => {
+        const response = await fetch(`/api/users/${userId}`);
+        return response.json();
+    });
+}
+
+// Memoization with LRU cache
+class LRUCache {
+    constructor(maxSize = 100) {
+        this.maxSize = maxSize;
+        this.cache = new Map();
+    }
+    
+    get(key) {
+        if (this.cache.has(key)) {
+            const value = this.cache.get(key);
+            this.cache.delete(key);
+            this.cache.set(key, value);
+            return value;
+        }
+        return undefined;
+    }
+    
+    set(key, value) {
+        if (this.cache.has(key)) {
+            this.cache.delete(key);
+        } else if (this.cache.size >= this.maxSize) {
+            const firstKey = this.cache.keys().next().value;
+            this.cache.delete(firstKey);
+        }
+        this.cache.set(key, value);
+    }
+}</code></pre>
+        
+        <h3>2. Debouncing và Throttling</h3>
+        <pre><code>// Debounced async function
+function debounceAsync(fn, delay) {
+    let timeoutId;
+    let promiseResolve;
+    let promiseReject;
+    
+    return function(...args) {
+        return new Promise((resolve, reject) => {
+            clearTimeout(timeoutId);
+            
+            promiseResolve = resolve;
+            promiseReject = reject;
+            
+            timeoutId = setTimeout(async () => {
+                try {
+                    const result = await fn.apply(this, args);
+                    promiseResolve(result);
+                } catch (error) {
+                    promiseReject(error);
+                }
+            }, delay);
+        });
+    };
+}
+
+// Usage
+const debouncedSearch = debounceAsync(async (query) => {
+    const response = await fetch(`/api/search?q=${query}`);
+    return response.json();
+}, 300);
+
+// Throttled async function
+function throttleAsync(fn, limit) {
+    let inThrottle;
+    let lastResult;
+    
+    return async function(...args) {
+        if (!inThrottle) {
+            inThrottle = true;
+            lastResult = await fn.apply(this, args);
+            setTimeout(() => inThrottle = false, limit);
+        }
+        return lastResult;
+    };
+}
+
+// Usage
+const throttledUpdate = throttleAsync(async (data) => {
+    const response = await fetch('/api/update', {
+        method: 'POST',
+        body: JSON.stringify(data)
+    });
+    return response.json();
+}, 1000);</code></pre>
+        
+        <h2>Testing Async Code</h2>
+        
+        <h3>1. Unit Testing Async Functions</h3>
+        <pre><code>// Mock async functions for testing
+const mockFetch = jest.fn();
+
+// Test async function
+describe('fetchUserData', () => {
+    beforeEach(() => {
+        mockFetch.mockClear();
+    });
+    
+    test('should fetch user data successfully', async () => {
+        const mockUser = { id: 1, name: 'John' };
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: jest.fn().mockResolvedValueOnce(mockUser)
+        });
+        
+        const result = await fetchUserData(1);
+        
+        expect(result).toEqual(mockUser);
+        expect(mockFetch).toHaveBeenCalledWith('/api/users/1');
+    });
+    
+    test('should handle fetch errors', async () => {
+        mockFetch.mockRejectedValueOnce(new Error('Network error'));
+        
+        await expect(fetchUserData(1)).rejects.toThrow('Network error');
+    });
+    
+    test('should handle HTTP errors', async () => {
+        mockFetch.mockResolvedValueOnce({
+            ok: false,
+            status: 404
+        });
+        
+        await expect(fetchUserData(1)).rejects.toThrow('HTTP 404');
+    });
+});
+
+// Test with fake timers
+describe('retryWithBackoff', () => {
+    beforeEach(() => {
+        jest.useFakeTimers();
+    });
+    
+    afterEach(() => {
+        jest.useRealTimers();
+    });
+    
+    test('should retry on failure', async () => {
+        const mockFn = jest.fn()
+            .mockRejectedValueOnce(new Error('First attempt fails'))
+            .mockResolvedValueOnce('Success');
+        
+        const promise = retryWithBackoff(mockFn, 2, 1000);
+        
+        // Fast-forward timers
+        jest.advanceTimersByTime(1000);
+        
+        const result = await promise;
+        
+        expect(result).toBe('Success');
+        expect(mockFn).toHaveBeenCalledTimes(2);
+    });
+});</code></pre>
+        
+        <h2>Best Practices</h2>
+        
+        <h3>1. Error Handling</h3>
+        <pre><code>// ✅ Good - Comprehensive error handling
+async function robustApiCall(url, options = {}) {
+    try {
+        const response = await fetch(url, {
+            timeout: 5000,
+            ...options
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        return { success: true, data };
+        
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            return { success: false, error: 'Request cancelled' };
+        } else if (error.name === 'TypeError') {
+            return { success: false, error: 'Network error' };
+        } else {
+            return { success: false, error: error.message };
+        }
+    }
+}
+
+// ❌ Bad - No error handling
+async function badApiCall(url) {
+    const response = await fetch(url);
+    return response.json(); // Can throw multiple errors
+}
+
+// ✅ Good - Specific error types
+class ApiError extends Error {
+    constructor(message, status, code) {
+        super(message);
+        this.name = 'ApiError';
+        this.status = status;
+        this.code = code;
+    }
+}
+
+async function fetchWithCustomError(url) {
+    try {
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new ApiError(
+                `API request failed`,
+                response.status,
+                'API_ERROR'
+            );
+        }
+        
+        return response.json();
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        } else {
+            throw new ApiError('Network error', 0, 'NETWORK_ERROR');
+        }
+    }
+}</code></pre>
+        
+        <h3>2. Performance Best Practices</h3>
+        <pre><code>// ✅ Good - Use Promise.all for independent operations
+async function fetchUserDashboard(userId) {
+    const [user, posts, comments] = await Promise.all([
+        fetchUser(userId),
+        fetchUserPosts(userId),
+        fetchUserComments(userId)
+    ]);
+    
+    return { user, posts, comments };
+}
+
+// ❌ Bad - Sequential when parallel is possible
+async function fetchUserDashboardBad(userId) {
+    const user = await fetchUser(userId);
+    const posts = await fetchUserPosts(userId);
+    const comments = await fetchUserComments(userId);
+    
+    return { user, posts, comments };
+}
+
+// ✅ Good - Use AbortController for cancellation
+async function fetchWithCancellation(url, signal) {
+    const response = await fetch(url, { signal });
+    return response.json();
+}
+
+// ✅ Good - Implement timeout
+async function fetchWithTimeout(url, timeout = 5000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        return response.json();
+    } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
+    }
+}
+
+// ✅ Good - Use caching for expensive operations
+const userCache = new Map();
+
+async function fetchUserCached(userId) {
+    if (userCache.has(userId)) {
+        return userCache.get(userId);
+    }
+    
+    const user = await fetchUser(userId);
+    userCache.set(userId, user);
+    return user;
+}</code></pre>
+        
+        <h2>Kết luận</h2>
+        <p>
+          Async/await và Promises đã cách mạng hóa cách chúng ta viết JavaScript bất đồng bộ:
+        </p>
+        <ul class="list">
+          <li><strong>Async/await</strong> làm code dễ đọc và debug hơn so với callbacks</li>
+          <li><strong>Promise.all</strong> giúp thực hiện nhiều tác vụ song song</li>
+          <li><strong>Error handling</strong> với try/catch rõ ràng hơn</li>
+          <li><strong>AbortController</strong> cho phép hủy requests</li>
+          <li><strong>Retry patterns</strong> giúp xử lý lỗi tạm thời</li>
+          <li><strong>Caching</strong> cải thiện performance</li>
+        </ul>
+        <p>
+          Việc nắm vững các patterns này giúp bạn viết JavaScript hiện đại, hiệu quả và dễ bảo trì.
+        </p>
+    </main>
+  </body>
+  </html>
+
+

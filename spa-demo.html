@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Demo SPA System — Huỳnh Tấn Đạt</title>
+    <meta name="description" content="Demo hệ thống SPA chuyển trang mượt mà không reload">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/spa-system.js"></script>
+    <style>
+      .demo-section {
+        margin: 40px 0;
+        padding: 20px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--panel);
+      }
+      .demo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+      }
+      .demo-item {
+        padding: 20px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        text-align: center;
+        min-height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+      }
+      .demo-item:hover {
+        transform: scale(1.05);
+        filter: brightness(1.1);
+      }
+      .demo-title {
+        color: var(--brand);
+        margin-bottom: 10px;
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .nav-demo {
+        display: flex;
+        gap: 10px;
+        margin: 20px 0;
+        flex-wrap: wrap;
+      }
+      .nav-demo a {
+        padding: 10px 20px;
+        background: var(--brand);
+        color: var(--bg);
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+      .nav-demo a:hover {
+        background: var(--accent);
+        transform: translateY(-2px);
+      }
+      .feature-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+      }
+      .feature-item {
+        padding: 15px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        border-left: 4px solid var(--brand);
+      }
+      .feature-item h4 {
+        margin: 0 0 8px 0;
+        color: var(--brand);
+      }
+      .feature-item p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="parallax-bg"></div>
+    <header class="site-header">
+      <nav class="nav">
+        <a class="brand hover-blur pulse-blur" href="index.html">HUỲNH TẤN ĐẠT</a>
+        <ul>
+          <li><a class="hover-blur" href="index.html">Home</a></li>
+          <li><a class="hover-blur" href="blog.html">Blog</a></li>
+          <li><a class="hover-blur" href="cv.html">CV</a></li>
+          <li><a class="hover-blur" href="contact.html">Liên hệ</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section class="hero card reveal">
+        <h1 class="text-reveal">🚀 Demo SPA System</h1>
+        <p>Hệ thống Single Page Application - Chuyển trang mượt mà không reload!</p>
+      </section>
+
+      <section class="demo-section">
+        <h2 class="demo-title">✨ Tính Năng SPA</h2>
+        <div class="feature-list">
+          <div class="feature-item">
+            <h4>🚫 Không Reload</h4>
+            <p>Chuyển trang hoàn toàn không reload, không có glitch trắng</p>
+          </div>
+          <div class="feature-item">
+            <h4>⚡ Tốc Độ Cao</h4>
+            <p>Load nội dung động, cache thông minh, preload khi hover</p>
+          </div>
+          <div class="feature-item">
+            <h4>🎨 Hiệu Ứng Mượt</h4>
+            <p>Slide transition với motion blur, fade in/out content</p>
+          </div>
+          <div class="feature-item">
+            <h4>🔗 URL Sync</h4>
+            <p>URL thay đổi theo trang, hỗ trợ back/forward browser</p>
+          </div>
+          <div class="feature-item">
+            <h4>📱 Responsive</h4>
+            <p>Hoạt động mượt mà trên mọi thiết bị</p>
+          </div>
+          <div class="feature-item">
+            <h4>♿ Accessible</h4>
+            <p>Tôn trọng prefers-reduced-motion, SEO friendly</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="demo-section">
+        <h2 class="demo-title">🎯 Thử Nghiệm SPA</h2>
+        <p>Click vào các link bên dưới để thấy hiệu ứng SPA mượt mà:</p>
+        
+        <div class="nav-demo">
+          <a href="index.html">🏠 Trang Chủ</a>
+          <a href="blog.html">📝 Blog</a>
+          <a href="cv.html">📄 CV</a>
+          <a href="contact.html">📧 Liên Hệ</a>
+        </div>
+
+        <div class="card">
+          <h3>🔍 Quan Sát:</h3>
+          <ul class="list">
+            <li><strong>Không có reload</strong>: Trang không bị refresh</li>
+            <li><strong>URL thay đổi</strong>: Địa chỉ URL cập nhật theo trang</li>
+            <li><strong>Nội dung thay đổi</strong>: Chỉ phần main content thay đổi</li>
+            <li><strong>Hiệu ứng mượt</strong>: Slide transition với motion blur</li>
+            <li><strong>Back/Forward</strong>: Nút browser hoạt động bình thường</li>
+            <li><strong>Preload</strong>: Hover vào link để preload trang</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="demo-section">
+        <h2 class="demo-title">⚙️ Cách Hoạt Động</h2>
+        <div class="card">
+          <h3>🔄 Quy Trình SPA:</h3>
+          <ol class="list">
+            <li><strong>Click Link</strong>: Người dùng click navigation</li>
+            <li><strong>Prevent Default</strong>: Ngăn chặn reload trang</li>
+            <li><strong>Start Transition</strong>: Bắt đầu hiệu ứng slide</li>
+            <li><strong>Fetch Content</strong>: Lấy nội dung trang mới (hoặc từ cache)</li>
+            <li><strong>Update Content</strong>: Thay thế nội dung trong DOM</li>
+            <li><strong>Update URL</strong>: Cập nhật URL và history</li>
+            <li><strong>End Transition</strong>: Kết thúc hiệu ứng</li>
+          </ol>
+          
+          <h3>💾 Cache System:</h3>
+          <ul class="list">
+            <li>Nội dung được cache sau lần load đầu tiên</li>
+            <li>Preload khi hover vào link</li>
+            <li>Instant loading cho các trang đã cache</li>
+            <li>Fallback về reload nếu có lỗi</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="demo-section">
+        <h2 class="demo-title">🎨 Hiệu Ứng Visual</h2>
+        <div class="demo-grid">
+          <div class="demo-item">
+            <div>
+              <h4>Slide Left</h4>
+              <p>Home → Blog → CV → Contact</p>
+            </div>
+          </div>
+          <div class="demo-item">
+            <div>
+              <h4>Slide Right</h4>
+              <p>Contact → CV → Blog → Home</p>
+            </div>
+          </div>
+          <div class="demo-item">
+            <div>
+              <h4>Content Fade</h4>
+              <p>Fade out → Update → Fade in</p>
+            </div>
+          </div>
+          <div class="demo-item">
+            <div>
+              <h4>Motion Blur</h4>
+              <p>Subtle blur effect during transition</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="demo-section">
+        <h2 class="demo-title">🚀 So Sánh</h2>
+        <div class="card">
+          <h3>❌ Trước (Page Reload):</h3>
+          <ul class="list">
+            <li>Trang bị reload hoàn toàn</li>
+            <li>Có glitch trắng khi chuyển trang</li>
+            <li>Mất thời gian load lại CSS/JS</li>
+            <li>Mất state của trang</li>
+            <li>Không mượt mà</li>
+          </ul>
+          
+          <h3>✅ Sau (SPA System):</h3>
+          <ul class="list">
+            <li>Không reload, chỉ thay đổi nội dung</li>
+            <li>Không có glitch, chuyển trang mượt mà</li>
+            <li>Load nhanh, cache thông minh</li>
+            <li>Giữ nguyên state và hiệu ứng</li>
+            <li>Trải nghiệm như native app</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="demo-section">
+        <h2 class="demo-title">🎮 Thử Nghiệm Thêm</h2>
+        <div class="card">
+          <p>Bạn có thể thử nghiệm:</p>
+          <ul class="list">
+            <li>Click qua lại giữa các trang nhiều lần</li>
+            <li>Sử dụng nút back/forward của trình duyệt</li>
+            <li>Hover vào các link để preload</li>
+            <li>Quan sát URL thay đổi</li>
+            <li>Kiểm tra không có reload trong Network tab</li>
+          </ul>
+          
+          <div class="nav-demo">
+            <a href="index.html">🏠 Về Trang Chủ</a>
+            <a href="effects-demo.html">🎨 Demo Hiệu Ứng</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer wave-blur">
+      <small>© 2025 Huỳnh Tấn Đạt — SPA System Demo</small>
+    </footer>
+  </body>
+</html>

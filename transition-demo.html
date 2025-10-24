@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Demo Chuyển Trang Motion Blur — Huỳnh Tấn Đạt</title>
+    <meta name="description" content="Demo hiệu ứng chuyển trang với motion blur">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/page-transitions.js"></script>
+    <style>
+      .demo-section {
+        margin: 40px 0;
+        padding: 20px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--panel);
+      }
+      .demo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+      }
+      .demo-item {
+        padding: 20px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        text-align: center;
+        min-height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+      }
+      .demo-item:hover {
+        transform: scale(1.05);
+        filter: brightness(1.1);
+      }
+      .demo-title {
+        color: var(--brand);
+        margin-bottom: 10px;
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .nav-demo {
+        display: flex;
+        gap: 10px;
+        margin: 20px 0;
+        flex-wrap: wrap;
+      }
+      .nav-demo a {
+        padding: 10px 20px;
+        background: var(--brand);
+        color: var(--bg);
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+      .nav-demo a:hover {
+        background: var(--accent);
+        transform: translateY(-2px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="parallax-bg"></div>
+    <header class="site-header">
+      <nav class="nav">
+        <a class="brand hover-blur pulse-blur" href="index.html">HUỲNH TẤN ĐẠT</a>
+        <ul>
+          <li><a class="hover-blur" href="index.html">Home</a></li>
+          <li><a class="hover-blur" href="blog.html">Blog</a></li>
+          <li><a class="hover-blur" href="cv.html">CV</a></li>
+          <li><a class="hover-blur" href="contact.html">Liên hệ</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section class="hero card reveal">
+        <h1 class="text-reveal">Demo Chuyển Trang Motion Blur</h1>
+        <p>Trang này demo hiệu ứng chuyển trang mượt mà với motion blur khi di chuyển giữa các trang.</p>
+      </section>
+
+      <section class="demo-section">
+        <h2 class="demo-title">Thử Nghiệm Chuyển Trang</h2>
+        <p>Click vào các link bên dưới để thấy hiệu ứng chuyển trang với motion blur:</p>
+        
+        <div class="nav-demo">
+          <a href="index.html">🏠 Trang Chủ</a>
+          <a href="blog.html">📝 Blog</a>
+          <a href="cv.html">📄 CV</a>
+          <a href="contact.html">📧 Liên Hệ</a>
+        </div>
+
+        <div class="card">
+          <h3>Hướng Dẫn:</h3>
+          <ul class="list">
+            <li><strong>Home → Blog</strong>: Hiệu ứng slide-left (lướt từ trái qua)</li>
+            <li><strong>Blog → CV</strong>: Hiệu ứng slide-left (lướt từ trái qua)</li>
+            <li><strong>CV → Contact</strong>: Hiệu ứng slide-left (lướt từ trái qua)</li>
+            <li><strong>Contact → CV</strong>: Hiệu ứng slide-right (lướt từ phải qua)</li>
+            <li><strong>CV → Blog</strong>: Hiệu ứng slide-right (lướt từ phải qua)</li>
+            <li><strong>Blog → Home</strong>: Hiệu ứng slide-right (lướt từ phải qua)</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="demo-section">
+        <h2 class="demo-title">Tính Năng Hiệu Ứng</h2>
+        <div class="demo-grid">
+          <div class="demo-item">
+            <div>
+              <h4>Motion Blur</h4>
+              <p>Hiệu ứng blur mượt mà trong quá trình chuyển trang</p>
+            </div>
+          </div>
+          <div class="demo-item">
+            <div>
+              <h4>Slide Direction</h4>
+              <p>Tự động chọn hướng slide dựa trên thứ tự trang</p>
+            </div>
+          </div>
+          <div class="demo-item">
+            <div>
+              <h4>Content Transition</h4>
+              <p>Nội dung trang cũ mờ dần và thu nhỏ</p>
+            </div>
+          </div>
+          <div class="demo-item">
+            <div>
+              <h4>Browser Navigation</h4>
+              <p>Hỗ trợ nút back/forward của trình duyệt</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="demo-section">
+        <h2 class="demo-title">Cách Hoạt Động</h2>
+        <div class="card">
+          <h3>Quy Trình Chuyển Trang:</h3>
+          <ol class="list">
+            <li><strong>Click Link</strong>: Người dùng click vào link navigation</li>
+            <li><strong>Xác Định Hướng</strong>: Hệ thống xác định hướng slide dựa trên thứ tự trang</li>
+            <li><strong>Blur Content</strong>: Nội dung trang hiện tại bị blur và thu nhỏ</li>
+            <li><strong>Slide Animation</strong>: Hiệu ứng slide với motion blur chạy</li>
+            <li><strong>Navigate</strong>: Chuyển đến trang mới</li>
+            <li><strong>Page Load</strong>: Trang mới load với hiệu ứng fade-in</li>
+          </ol>
+          
+          <h3>Thứ Tự Trang:</h3>
+          <p><strong>Home → Blog → CV → Contact</strong></p>
+          <p>Chuyển tiến: slide-left (lướt từ trái qua)</p>
+          <p>Chuyển lùi: slide-right (lướt từ phải qua)</p>
+        </div>
+      </section>
+
+      <section class="demo-section">
+        <h2 class="demo-title">Thử Nghiệm Thêm</h2>
+        <div class="card">
+          <p>Bạn có thể thử nghiệm bằng cách:</p>
+          <ul class="list">
+            <li>Click vào các link navigation ở header</li>
+            <li>Sử dụng nút back/forward của trình duyệt</li>
+            <li>Thử chuyển qua lại giữa các trang để thấy hiệu ứng</li>
+            <li>Quan sát hiệu ứng motion blur và slide direction</li>
+          </ul>
+          
+          <div class="nav-demo">
+            <a href="effects-demo.html">🎨 Xem Demo Hiệu Ứng Khác</a>
+            <a href="index.html">🏠 Về Trang Chủ</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer wave-blur">
+      <small>© 2025 Huỳnh Tấn Đạt — Demo Page Transitions</small>
+    </footer>
+  </body>
+</html>

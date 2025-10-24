@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Test Smooth Transitions — Huỳnh Tấn Đạt</title>
+    <meta name="description" content="Test hệ thống chuyển trang mượt mà không freeze">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/smooth-transitions.js"></script>
+    <style>
+      .test-section {
+        margin: 40px 0;
+        padding: 20px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--panel);
+      }
+      .test-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+      }
+      .test-item {
+        padding: 20px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        text-align: center;
+        transition: all 0.3s ease;
+      }
+      .test-item:hover {
+        transform: scale(1.05);
+        filter: brightness(1.1);
+      }
+      .test-title {
+        color: var(--brand);
+        margin-bottom: 10px;
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .nav-test {
+        display: flex;
+        gap: 10px;
+        margin: 20px 0;
+        flex-wrap: wrap;
+      }
+      .nav-test a {
+        padding: 10px 20px;
+        background: var(--brand);
+        color: var(--bg);
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+      .nav-test a:hover {
+        background: var(--accent);
+        transform: translateY(-2px);
+      }
+      .status-good {
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .status-bad {
+        color: #ff6b6b;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="parallax-bg"></div>
+    <header class="site-header">
+      <nav class="nav">
+        <a class="brand hover-blur pulse-blur" href="index.html">HUỲNH TẤN ĐẠT</a>
+        <ul>
+          <li><a class="hover-blur" href="index.html">Home</a></li>
+          <li><a class="hover-blur" href="blog.html">Blog</a></li>
+          <li><a class="hover-blur" href="cv.html">CV</a></li>
+          <li><a class="hover-blur" href="contact.html">Liên hệ</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section class="hero card reveal">
+        <h1 class="text-reveal">✅ Smooth Transitions Test</h1>
+        <p>Hệ thống chuyển trang đơn giản và ổn định - Không bị freeze!</p>
+      </section>
+
+      <section class="test-section">
+        <h2 class="test-title">🎯 Test Navigation</h2>
+        <p>Click vào các link bên dưới để test chuyển trang mượt mà:</p>
+        
+        <div class="nav-test">
+          <a href="index.html">🏠 Trang Chủ</a>
+          <a href="blog.html">📝 Blog</a>
+          <a href="cv.html">📄 CV</a>
+          <a href="contact.html">📧 Liên Hệ</a>
+        </div>
+
+        <div class="card">
+          <h3>✅ Đã Fix:</h3>
+          <ul class="list">
+            <li><span class="status-good">Không bị freeze</span>: Hệ thống đơn giản và ổn định</li>
+            <li><span class="status-good">Không có glitch trắng</span>: Background được set ngay lập tức</li>
+            <li><span class="status-good">Chuyển trang mượt</span>: Fade transition đơn giản</li>
+            <li><span class="status-good">Error handling</span>: Có fallback nếu có lỗi</li>
+            <li><span class="status-good">Performance</span>: Nhẹ và nhanh</li>
+            <li><span class="status-good">No SPA complexity</span>: Không có SPA phức tạp</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="test-section">
+        <h2 class="test-title">🔧 Cách Hoạt Động</h2>
+        <div class="test-grid">
+          <div class="test-item">
+            <h4>1. Click Link</h4>
+            <p>Người dùng click navigation</p>
+          </div>
+          <div class="test-item">
+            <h4>2. Show Overlay</h4>
+            <p>Hiện overlay đen mượt mà</p>
+          </div>
+          <div class="test-item">
+            <h4>3. Navigate</h4>
+            <p>Chuyển trang sau 400ms</p>
+          </div>
+          <div class="test-item">
+            <h4>4. Page Load</h4>
+            <p>Trang mới load với fade in</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="test-section">
+        <h2 class="test-title">🎨 Hiệu Ứng</h2>
+        <div class="card">
+          <h3>✨ Các hiệu ứng vẫn hoạt động:</h3>
+          <ul class="list">
+            <li><strong>Parallax Background</strong>: Chuyển động nhẹ nhàng</li>
+            <li><strong>Floating Avatar</strong>: Bay lơ lửng</li>
+            <li><strong>Hover Effects</strong>: Motion blur khi hover</li>
+            <li><strong>Reveal Animations</strong>: Hiệu ứng xuất hiện</li>
+            <li><strong>Wave Footer</strong>: Hiệu ứng sóng</li>
+            <li><strong>Pulse Brand</strong>: Nhấp nháy tên</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="test-section">
+        <h2 class="test-title">🚀 So Sánh</h2>
+        <div class="card">
+          <h3>❌ SPA Systems (Bị Freeze):</h3>
+          <ul class="list">
+            <li><span class="status-bad">Phức tạp</span>: Nhiều code, khó debug</li>
+            <li><span class="status-bad">Bị freeze</span>: Đứng trang khi chuyển</li>
+            <li><span class="status-bad">Không ổn định</span>: Dễ bị lỗi</li>
+            <li><span class="status-bad">Performance</span>: Nặng và chậm</li>
+          </ul>
+          
+          <h3>✅ Smooth System (Đã Fix):</h3>
+          <ul class="list">
+            <li><span class="status-good">Đơn giản</span>: Ít code, dễ hiểu</li>
+            <li><span class="status-good">Không freeze</span>: Hoạt động ổn định</li>
+            <li><span class="status-good">Ổn định</span>: Ít lỗi, có fallback</li>
+            <li><span class="status-good">Performance</span>: Nhẹ và nhanh</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="test-section">
+        <h2 class="test-title">🎮 Test Thêm</h2>
+        <div class="card">
+          <p>Bạn có thể test:</p>
+          <ul class="list">
+            <li>Click qua lại giữa các trang nhiều lần</li>
+            <li>Kiểm tra không bị freeze</li>
+            <li>Quan sát hiệu ứng fade mượt mà</li>
+            <li>Test trên các thiết bị khác nhau</li>
+            <li>Mở Developer Tools để xem console</li>
+          </ul>
+          
+          <div class="nav-test">
+            <a href="index.html">🏠 Về Trang Chủ</a>
+            <a href="effects-demo.html">🎨 Demo Hiệu Ứng</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer wave-blur">
+      <small>© 2025 Huỳnh Tấn Đạt — Smooth Transitions Test</small>
+    </footer>
+  </body>
+</html>

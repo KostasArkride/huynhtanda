@@ -1,0 +1,1144 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DOM & sự kiện: thao tác giao diện</title>
+    <meta name="description" content="Chọn phần tử, lắng nghe sự kiện và cập nhật DOM.">
+    <link rel="stylesheet" href="../css/styles.css">
+  </head>
+  <body>
+    <main class="container post">
+      <a class="back" href="../blog.html">← Quay lại Blog</a>
+      <h1>DOM & sự kiện: thao tác giao diện</h1>
+      <div class="meta">Chủ đề: <span class="tag tag-js">JavaScript</span></div>
+      <article class="card">
+        <h2>Giới thiệu về DOM và Events</h2>
+        <p>
+          DOM (Document Object Model) là một API cho phép JavaScript tương tác với HTML và CSS. 
+          Events là cơ chế để xử lý các hành động của người dùng và các sự kiện khác trong trình duyệt. 
+          Việc hiểu và sử dụng đúng DOM và Events giúp tạo ra các ứng dụng web tương tác và hiệu quả.
+        </p>
+        
+        <h2>DOM Selection và Manipulation</h2>
+        
+        <h3>1. Element Selection</h3>
+        <pre><code>// Modern selection methods
+const element = document.querySelector('#myId');
+const elements = document.querySelectorAll('.myClass');
+const firstDiv = document.querySelector('div');
+const allDivs = document.querySelectorAll('div');
+
+// Legacy methods (still useful)
+const elementById = document.getElementById('myId');
+const elementsByClass = document.getElementsByClassName('myClass');
+const elementsByTag = document.getElementsByTagName('div');
+
+// Complex selectors
+const complexSelector = document.querySelector('div.container > ul li:first-child');
+const attributeSelector = document.querySelector('[data-id="123"]');
+const pseudoSelector = document.querySelector('input:checked');
+
+// Multiple selectors
+const multipleElements = document.querySelectorAll('h1, h2, h3');
+const nestedSelector = document.querySelectorAll('.parent .child');
+
+// Performance comparison
+console.time('querySelector');
+for (let i = 0; i < 1000; i++) {
+    document.querySelector('#test');
+}
+console.timeEnd('querySelector'); // Slower for repeated calls
+
+console.time('getElementById');
+for (let i = 0; i < 1000; i++) {
+    document.getElementById('test');
+}
+console.timeEnd('getElementById'); // Faster for repeated calls</code></pre>
+        
+        <h3>2. DOM Manipulation</h3>
+        <pre><code>// Creating elements
+const newDiv = document.createElement('div');
+const newParagraph = document.createElement('p');
+const textNode = document.createTextNode('Hello World');
+
+// Setting attributes
+newDiv.setAttribute('id', 'myDiv');
+newDiv.setAttribute('class', 'container');
+newDiv.setAttribute('data-value', '123');
+
+// Getting attributes
+const id = newDiv.getAttribute('id');
+const hasClass = newDiv.hasAttribute('class');
+
+// Modern property access
+newDiv.id = 'myDiv';
+newDiv.className = 'container';
+newDiv.dataset.value = '123'; // data-value
+
+// Adding content
+newDiv.textContent = 'Text content';
+newDiv.innerHTML = '<span>HTML content</span>';
+
+// Appending elements
+document.body.appendChild(newDiv);
+newDiv.appendChild(newParagraph);
+newParagraph.appendChild(textNode);
+
+// Inserting elements
+const existingElement = document.querySelector('#existing');
+const newElement = document.createElement('div');
+existingElement.insertBefore(newElement, existingElement.firstChild);
+
+// Modern insertion methods
+existingElement.prepend(newElement); // Insert as first child
+existingElement.append(newElement);  // Insert as last child
+existingElement.before(newElement);  // Insert before element
+existingElement.after(newElement);   // Insert after element
+
+// Removing elements
+newDiv.remove(); // Modern method
+// Legacy: newDiv.parentNode.removeChild(newDiv);
+
+// Cloning elements
+const clonedDiv = newDiv.cloneNode(true); // Deep clone
+const shallowClone = newDiv.cloneNode(false); // Shallow clone</code></pre>
+        
+        <h2>Event Handling</h2>
+        
+        <h3>1. Basic Event Listeners</h3>
+        <pre><code>// Basic event listener
+const button = document.querySelector('#myButton');
+
+button.addEventListener('click', function(event) {
+    console.log('Button clicked!');
+    console.log('Event:', event);
+    console.log('Target:', event.target);
+    console.log('Current target:', event.currentTarget);
+});
+
+// Arrow function syntax
+button.addEventListener('click', (event) => {
+    console.log('Button clicked with arrow function!');
+});
+
+// Multiple event listeners
+button.addEventListener('click', handleClick);
+button.addEventListener('click', handleClick2);
+
+function handleClick(event) {
+    console.log('First handler');
+}
+
+function handleClick2(event) {
+    console.log('Second handler');
+}
+
+// Event listener with options
+button.addEventListener('click', handleClick, {
+    once: true,        // Remove after first execution
+    passive: true,     // Never call preventDefault()
+    capture: true      // Use capture phase
+});
+
+// Removing event listeners
+button.removeEventListener('click', handleClick);
+
+// Common event types
+const input = document.querySelector('#myInput');
+
+input.addEventListener('input', (e) => {
+    console.log('Input value:', e.target.value);
+});
+
+input.addEventListener('change', (e) => {
+    console.log('Value changed:', e.target.value);
+});
+
+input.addEventListener('focus', (e) => {
+    console.log('Input focused');
+});
+
+input.addEventListener('blur', (e) => {
+    console.log('Input blurred');
+});
+
+// Keyboard events
+document.addEventListener('keydown', (e) => {
+    console.log('Key pressed:', e.key);
+    console.log('Key code:', e.code);
+    console.log('Ctrl pressed:', e.ctrlKey);
+    console.log('Shift pressed:', e.shiftKey);
+});
+
+// Mouse events
+const div = document.querySelector('#myDiv');
+
+div.addEventListener('mousedown', (e) => {
+    console.log('Mouse down');
+});
+
+div.addEventListener('mouseup', (e) => {
+    console.log('Mouse up');
+});
+
+div.addEventListener('mousemove', (e) => {
+    console.log('Mouse move:', e.clientX, e.clientY);
+});
+
+div.addEventListener('mouseenter', (e) => {
+    console.log('Mouse entered');
+});
+
+div.addEventListener('mouseleave', (e) => {
+    console.log('Mouse left');
+});</code></pre>
+        
+        <h3>2. Event Delegation</h3>
+        <pre><code>// Without event delegation - Inefficient
+document.querySelectorAll('.todo-item').forEach(item => {
+    item.addEventListener('click', function() {
+        console.log('Todo item clicked:', this.textContent);
+    });
+});
+
+// With event delegation - Efficient
+document.querySelector('#todoList').addEventListener('click', function(event) {
+    if (event.target.classList.contains('todo-item')) {
+        console.log('Todo item clicked:', event.target.textContent);
+    }
+});
+
+// Advanced event delegation
+class TodoList {
+    constructor(container) {
+        this.container = container;
+        this.setupEventDelegation();
+    }
+    
+    setupEventDelegation() {
+        this.container.addEventListener('click', (event) => {
+            const todoItem = event.target.closest('.todo-item');
+            if (!todoItem) return;
+            
+            if (event.target.classList.contains('delete-btn')) {
+                this.deleteTodo(todoItem);
+            } else if (event.target.classList.contains('edit-btn')) {
+                this.editTodo(todoItem);
+            } else {
+                this.toggleTodo(todoItem);
+            }
+        });
+        
+        this.container.addEventListener('change', (event) => {
+            if (event.target.type === 'checkbox') {
+                const todoItem = event.target.closest('.todo-item');
+                this.toggleTodo(todoItem);
+            }
+        });
+    }
+    
+    deleteTodo(item) {
+        item.remove();
+    }
+    
+    editTodo(item) {
+        const textElement = item.querySelector('.todo-text');
+        const currentText = textElement.textContent;
+        
+        const input = document.createElement('input');
+        input.value = currentText;
+        input.addEventListener('blur', () => {
+            textElement.textContent = input.value;
+            input.replaceWith(textElement);
+        });
+        
+        textElement.replaceWith(input);
+        input.focus();
+    }
+    
+    toggleTodo(item) {
+        item.classList.toggle('completed');
+    }
+}
+
+// Usage
+const todoList = new TodoList(document.querySelector('#todoList'));</code></pre>
+        
+        <h2>Event Propagation</h2>
+        
+        <h3>1. Event Phases</h3>
+        <pre><code>// Event propagation phases
+document.querySelector('#outer').addEventListener('click', function(event) {
+    console.log('Outer - Phase:', event.eventPhase);
+    console.log('Outer - Target:', event.target);
+    console.log('Outer - Current Target:', event.currentTarget);
+}, true); // Capture phase
+
+document.querySelector('#inner').addEventListener('click', function(event) {
+    console.log('Inner - Phase:', event.eventPhase);
+    console.log('Inner - Target:', event.target);
+    console.log('Inner - Current Target:', event.currentTarget);
+}, false); // Bubbling phase
+
+// Event phase constants
+// Event.CAPTURING_PHASE = 1
+// Event.AT_TARGET = 2
+// Event.BUBBLING_PHASE = 3
+
+// Stopping propagation
+document.querySelector('#stopPropagation').addEventListener('click', function(event) {
+    console.log('Stopping propagation');
+    event.stopPropagation(); // Stop event from bubbling up
+});
+
+// Stopping immediate propagation
+document.querySelector('#stopImmediate').addEventListener('click', function(event) {
+    console.log('First handler');
+    event.stopImmediatePropagation(); // Stop all other handlers
+});
+
+document.querySelector('#stopImmediate').addEventListener('click', function(event) {
+    console.log('This will not execute');
+});
+
+// Preventing default behavior
+document.querySelector('#preventDefault').addEventListener('click', function(event) {
+    event.preventDefault(); // Prevent default action
+    console.log('Default action prevented');
+});
+
+// Event delegation with propagation control
+document.querySelector('#delegationContainer').addEventListener('click', function(event) {
+    const button = event.target.closest('button');
+    if (!button) return;
+    
+    event.stopPropagation(); // Prevent event from bubbling further
+    
+    if (button.dataset.action === 'delete') {
+        this.deleteItem(button.closest('.item'));
+    } else if (button.dataset.action === 'edit') {
+        this.editItem(button.closest('.item'));
+    }
+});</code></pre>
+        
+        <h2>Performance Optimization</h2>
+        
+        <h3>1. Avoiding Layout Thrashing</h3>
+        <pre><code>// ❌ Bad - Causes layout thrashing
+function badDOMUpdates() {
+    const elements = document.querySelectorAll('.item');
+    
+    elements.forEach(element => {
+        element.style.width = '200px';     // Layout
+        element.style.height = '100px';    // Layout
+        element.style.margin = '10px';     // Layout
+    });
+}
+
+// ✅ Good - Batch DOM updates
+function goodDOMUpdates() {
+    const elements = document.querySelectorAll('.item');
+    
+    // Use DocumentFragment for multiple insertions
+    const fragment = document.createDocumentFragment();
+    
+    elements.forEach(element => {
+        // Batch style changes
+        element.style.cssText = 'width: 200px; height: 100px; margin: 10px;';
+        
+        // Or use classes
+        element.classList.add('updated-style');
+        
+        // Add to fragment instead of DOM
+        const newElement = element.cloneNode(true);
+        fragment.appendChild(newElement);
+    });
+    
+    // Single DOM update
+    document.querySelector('#container').appendChild(fragment);
+}
+
+// ✅ Good - Use requestAnimationFrame
+function smoothAnimation() {
+    const element = document.querySelector('#animated');
+    let position = 0;
+    
+    function animate() {
+        position += 1;
+        element.style.left = position + 'px';
+        
+        if (position < 500) {
+            requestAnimationFrame(animate);
+        }
+    }
+    
+    requestAnimationFrame(animate);
+}
+
+// ✅ Good - Batch reads and writes
+function batchReadsAndWrites() {
+    const elements = document.querySelectorAll('.item');
+    
+    // Batch all reads first
+    const measurements = Array.from(elements).map(element => ({
+        element,
+        width: element.offsetWidth,
+        height: element.offsetHeight,
+        top: element.offsetTop
+    }));
+    
+    // Then batch all writes
+    measurements.forEach(({ element, width, height }) => {
+        element.style.width = (width * 1.1) + 'px';
+        element.style.height = (height * 1.1) + 'px';
+    });
+}</code></pre>
+        
+        <h3>2. Efficient Event Handling</h3>
+        <pre><code>// ❌ Bad - Too many event listeners
+function badEventHandling() {
+    const buttons = document.querySelectorAll('.button');
+    
+    buttons.forEach(button => {
+        button.addEventListener('click', handleClick);
+        button.addEventListener('mouseenter', handleMouseEnter);
+        button.addEventListener('mouseleave', handleMouseLeave);
+    });
+}
+
+// ✅ Good - Event delegation
+function goodEventHandling() {
+    const container = document.querySelector('#buttonContainer');
+    
+    container.addEventListener('click', function(event) {
+        if (event.target.classList.contains('button')) {
+            handleClick(event);
+        }
+    });
+    
+    container.addEventListener('mouseenter', function(event) {
+        if (event.target.classList.contains('button')) {
+            handleMouseEnter(event);
+        }
+    }, true); // Use capture for mouseenter
+    
+    container.addEventListener('mouseleave', function(event) {
+        if (event.target.classList.contains('button')) {
+            handleMouseLeave(event);
+        }
+    }, true); // Use capture for mouseleave
+}
+
+// ✅ Good - Debounced events
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Usage
+const debouncedResize = debounce(function() {
+    console.log('Window resized');
+    // Handle resize
+}, 250);
+
+window.addEventListener('resize', debouncedResize);
+
+// ✅ Good - Throttled events
+function throttle(func, limit) {
+    let inThrottle;
+    return function() {
+        const args = arguments;
+        const context = this;
+        if (!inThrottle) {
+            func.apply(context, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+        }
+    };
+}
+
+// Usage
+const throttledScroll = throttle(function() {
+    console.log('Scrolling');
+    // Handle scroll
+}, 100);
+
+window.addEventListener('scroll', throttledScroll);</code></pre>
+        
+        <h2>Modern DOM APIs</h2>
+        
+        <h3>1. Intersection Observer</h3>
+        <pre><code>// Intersection Observer for lazy loading
+const imageObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const img = entry.target;
+            img.src = img.dataset.src;
+            img.classList.remove('lazy');
+            observer.unobserve(img);
+        }
+    });
+});
+
+// Observe all lazy images
+document.querySelectorAll('img[data-src]').forEach(img => {
+    imageObserver.observe(img);
+});
+
+// Intersection Observer for animations
+const animationObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('animate-in');
+        } else {
+            entry.target.classList.remove('animate-in');
+        }
+    });
+}, {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+});
+
+document.querySelectorAll('.animate-on-scroll').forEach(element => {
+    animationObserver.observe(element);
+});
+
+// Intersection Observer for infinite scroll
+const infiniteScrollObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            loadMoreContent();
+        }
+    });
+});
+
+const loadMoreTrigger = document.querySelector('#load-more-trigger');
+infiniteScrollObserver.observe(loadMoreTrigger);</code></pre>
+        
+        <h3>2. Mutation Observer</h3>
+        <pre><code>// Mutation Observer for DOM changes
+const mutationObserver = new MutationObserver((mutations) => {
+    mutations.forEach(mutation => {
+        if (mutation.type === 'childList') {
+            console.log('Child nodes changed');
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    console.log('Added element:', node);
+                }
+            });
+        }
+        
+        if (mutation.type === 'attributes') {
+            console.log('Attribute changed:', mutation.attributeName);
+            console.log('Old value:', mutation.oldValue);
+            console.log('New value:', mutation.target.getAttribute(mutation.attributeName));
+        }
+    });
+});
+
+// Start observing
+mutationObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeOldValue: true,
+    attributeFilter: ['class', 'data-value']
+});
+
+// Stop observing
+// mutationObserver.disconnect();
+
+// Mutation Observer for form validation
+const formObserver = new MutationObserver((mutations) => {
+    mutations.forEach(mutation => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+            const input = mutation.target;
+            if (input.classList.contains('invalid')) {
+                showError(input);
+            } else if (input.classList.contains('valid')) {
+                hideError(input);
+            }
+        }
+    });
+});
+
+document.querySelectorAll('input').forEach(input => {
+    formObserver.observe(input, {
+        attributes: true,
+        attributeFilter: ['class']
+    });
+});</code></pre>
+        
+        <h2>Custom Events</h2>
+        
+        <h3>1. Creating và Dispatching Custom Events</h3>
+        <pre><code>// Basic custom event
+const customEvent = new CustomEvent('myCustomEvent', {
+    detail: {
+        message: 'Hello from custom event',
+        timestamp: Date.now()
+    },
+    bubbles: true,
+    cancelable: true
+});
+
+// Dispatch event
+document.querySelector('#myElement').dispatchEvent(customEvent);
+
+// Listen for custom event
+document.querySelector('#myElement').addEventListener('myCustomEvent', function(event) {
+    console.log('Custom event received:', event.detail);
+});
+
+// Custom event with more options
+class CustomEventManager {
+    constructor() {
+        this.events = new Map();
+    }
+    
+    createEvent(name, data = {}) {
+        return new CustomEvent(name, {
+            detail: data,
+            bubbles: true,
+            cancelable: true
+        });
+    }
+    
+    dispatchEvent(element, eventName, data = {}) {
+        const event = this.createEvent(eventName, data);
+        element.dispatchEvent(event);
+    }
+    
+    on(element, eventName, handler) {
+        if (!this.events.has(element)) {
+            this.events.set(element, new Map());
+        }
+        
+        const elementEvents = this.events.get(element);
+        if (!elementEvents.has(eventName)) {
+            elementEvents.set(eventName, []);
+        }
+        
+        elementEvents.get(eventName).push(handler);
+        element.addEventListener(eventName, handler);
+    }
+    
+    off(element, eventName, handler) {
+        const elementEvents = this.events.get(element);
+        if (elementEvents && elementEvents.has(eventName)) {
+            const handlers = elementEvents.get(eventName);
+            const index = handlers.indexOf(handler);
+            if (index > -1) {
+                handlers.splice(index, 1);
+                element.removeEventListener(eventName, handler);
+            }
+        }
+    }
+}
+
+// Usage
+const eventManager = new CustomEventManager();
+const element = document.querySelector('#myElement');
+
+eventManager.on(element, 'userAction', function(event) {
+    console.log('User action:', event.detail);
+});
+
+eventManager.dispatchEvent(element, 'userAction', {
+    action: 'click',
+    target: 'button',
+    timestamp: Date.now()
+});</code></pre>
+        
+        <h2>Memory Management</h2>
+        
+        <h3>1. Preventing Memory Leaks</h3>
+        <pre><code>// ❌ Bad - Memory leak
+function badEventHandling() {
+    const elements = document.querySelectorAll('.item');
+    
+    elements.forEach(element => {
+        element.addEventListener('click', function() {
+            console.log('Clicked');
+        });
+    });
+    
+    // Event listeners are not removed when elements are deleted
+}
+
+// ✅ Good - Proper cleanup
+class EventManager {
+    constructor() {
+        this.listeners = new Map();
+    }
+    
+    addEventListener(element, event, handler) {
+        if (!this.listeners.has(element)) {
+            this.listeners.set(element, []);
+        }
+        
+        this.listeners.get(element).push({ event, handler });
+        element.addEventListener(event, handler);
+    }
+    
+    removeAllListeners(element) {
+        if (this.listeners.has(element)) {
+            this.listeners.get(element).forEach(({ event, handler }) => {
+                element.removeEventListener(event, handler);
+            });
+            this.listeners.delete(element);
+        }
+    }
+    
+    cleanup() {
+        for (const [element, listeners] of this.listeners) {
+            listeners.forEach(({ event, handler }) => {
+                element.removeEventListener(event, handler);
+            });
+        }
+        this.listeners.clear();
+    }
+}
+
+// Usage
+const eventManager = new EventManager();
+const element = document.querySelector('#myElement');
+
+eventManager.addEventListener(element, 'click', handleClick);
+eventManager.addEventListener(element, 'mouseenter', handleMouseEnter);
+
+// Cleanup when element is removed
+element.addEventListener('beforeunload', () => {
+    eventManager.removeAllListeners(element);
+});
+
+// WeakMap for automatic cleanup
+const elementData = new WeakMap();
+
+function attachData(element, data) {
+    elementData.set(element, data);
+}
+
+function getData(element) {
+    return elementData.get(element);
+}
+
+// When element is garbage collected, WeakMap entry is automatically removed</code></pre>
+        
+        <h2>Form Handling</h2>
+        
+        <h3>1. Form Validation và Submission</h3>
+        <pre><code>// Form validation
+class FormValidator {
+    constructor(form) {
+        this.form = form;
+        this.errors = new Map();
+        this.setupValidation();
+    }
+    
+    setupValidation() {
+        this.form.addEventListener('submit', (event) => {
+            if (!this.validateForm()) {
+                event.preventDefault();
+                this.showErrors();
+            }
+        });
+        
+        // Real-time validation
+        this.form.querySelectorAll('input').forEach(input => {
+            input.addEventListener('blur', () => {
+                this.validateField(input);
+            });
+            
+            input.addEventListener('input', () => {
+                this.clearFieldError(input);
+            });
+        });
+    }
+    
+    validateForm() {
+        let isValid = true;
+        this.errors.clear();
+        
+        this.form.querySelectorAll('input').forEach(input => {
+            if (!this.validateField(input)) {
+                isValid = false;
+            }
+        });
+        
+        return isValid;
+    }
+    
+    validateField(input) {
+        const value = input.value.trim();
+        const rules = input.dataset.validation?.split(' ') || [];
+        
+        for (const rule of rules) {
+            if (!this.validateRule(input, rule, value)) {
+                this.setFieldError(input, this.getErrorMessage(rule));
+                return false;
+            }
+        }
+        
+        this.clearFieldError(input);
+        return true;
+    }
+    
+    validateRule(input, rule, value) {
+        switch (rule) {
+            case 'required':
+                return value.length > 0;
+            case 'email':
+                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+            case 'minlength':
+                const minLength = parseInt(input.dataset.minlength);
+                return value.length >= minLength;
+            case 'maxlength':
+                const maxLength = parseInt(input.dataset.maxlength);
+                return value.length <= maxLength;
+            case 'pattern':
+                const pattern = new RegExp(input.dataset.pattern);
+                return pattern.test(value);
+            default:
+                return true;
+        }
+    }
+    
+    setFieldError(input, message) {
+        this.errors.set(input.name, message);
+        input.classList.add('error');
+        
+        let errorElement = input.parentNode.querySelector('.error-message');
+        if (!errorElement) {
+            errorElement = document.createElement('div');
+            errorElement.className = 'error-message';
+            input.parentNode.appendChild(errorElement);
+        }
+        errorElement.textContent = message;
+    }
+    
+    clearFieldError(input) {
+        this.errors.delete(input.name);
+        input.classList.remove('error');
+        
+        const errorElement = input.parentNode.querySelector('.error-message');
+        if (errorElement) {
+            errorElement.remove();
+        }
+    }
+    
+    getErrorMessage(rule) {
+        const messages = {
+            required: 'This field is required',
+            email: 'Please enter a valid email address',
+            minlength: 'Minimum length not met',
+            maxlength: 'Maximum length exceeded',
+            pattern: 'Invalid format'
+        };
+        return messages[rule] || 'Invalid input';
+    }
+    
+    showErrors() {
+        console.log('Form errors:', Array.from(this.errors.entries()));
+    }
+}
+
+// Usage
+const form = document.querySelector('#myForm');
+const validator = new FormValidator(form);</code></pre>
+        
+        <h2>Drag and Drop</h2>
+        
+        <h3>1. HTML5 Drag and Drop API</h3>
+        <pre><code>// Drag and Drop implementation
+class DragDropManager {
+    constructor(container) {
+        this.container = container;
+        this.draggedElement = null;
+        this.setupDragDrop();
+    }
+    
+    setupDragDrop() {
+        // Make elements draggable
+        this.container.querySelectorAll('.draggable').forEach(element => {
+            element.draggable = true;
+            
+            element.addEventListener('dragstart', (event) => {
+                this.draggedElement = event.target;
+                event.target.classList.add('dragging');
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/html', event.target.outerHTML);
+            });
+            
+            element.addEventListener('dragend', (event) => {
+                event.target.classList.remove('dragging');
+                this.draggedElement = null;
+            });
+        });
+        
+        // Setup drop zones
+        this.container.querySelectorAll('.drop-zone').forEach(zone => {
+            zone.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+                zone.classList.add('drag-over');
+            });
+            
+            zone.addEventListener('dragleave', (event) => {
+                zone.classList.remove('drag-over');
+            });
+            
+            zone.addEventListener('drop', (event) => {
+                event.preventDefault();
+                zone.classList.remove('drag-over');
+                
+                if (this.draggedElement) {
+                    zone.appendChild(this.draggedElement);
+                    this.onDrop(this.draggedElement, zone);
+                }
+            });
+        });
+    }
+    
+    onDrop(element, dropZone) {
+        console.log('Element dropped:', element);
+        console.log('Drop zone:', dropZone);
+        
+        // Custom drop logic
+        const dropEvent = new CustomEvent('itemDropped', {
+            detail: {
+                element,
+                dropZone,
+                timestamp: Date.now()
+            }
+        });
+        
+        this.container.dispatchEvent(dropEvent);
+    }
+    
+    addDraggableElement(element) {
+        element.draggable = true;
+        element.classList.add('draggable');
+        
+        element.addEventListener('dragstart', (event) => {
+            this.draggedElement = event.target;
+            event.target.classList.add('dragging');
+            event.dataTransfer.effectAllowed = 'move';
+        });
+        
+        element.addEventListener('dragend', (event) => {
+            event.target.classList.remove('dragging');
+            this.draggedElement = null;
+        });
+    }
+    
+    addDropZone(element) {
+        element.classList.add('drop-zone');
+        
+        element.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            element.classList.add('drag-over');
+        });
+        
+        element.addEventListener('dragleave', (event) => {
+            element.classList.remove('drag-over');
+        });
+        
+        element.addEventListener('drop', (event) => {
+            event.preventDefault();
+            element.classList.remove('drag-over');
+            
+            if (this.draggedElement) {
+                element.appendChild(this.draggedElement);
+                this.onDrop(this.draggedElement, element);
+            }
+        });
+    }
+}
+
+// Usage
+const dragDropManager = new DragDropManager(document.querySelector('#dragDropContainer'));</code></pre>
+        
+        <h2>Best Practices</h2>
+        
+        <h3>1. Performance Best Practices</h3>
+        <pre><code>// ✅ Good - Use event delegation
+document.querySelector('#container').addEventListener('click', function(event) {
+    if (event.target.matches('.button')) {
+        handleButtonClick(event);
+    }
+});
+
+// ✅ Good - Batch DOM updates
+function updateMultipleElements() {
+    const fragment = document.createDocumentFragment();
+    
+    for (let i = 0; i < 100; i++) {
+        const div = document.createElement('div');
+        div.textContent = `Item ${i}`;
+        fragment.appendChild(div);
+    }
+    
+    document.querySelector('#container').appendChild(fragment);
+}
+
+// ✅ Good - Use requestAnimationFrame for animations
+function animateElement(element) {
+    let start = null;
+    
+    function animation(timestamp) {
+        if (!start) start = timestamp;
+        const progress = timestamp - start;
+        
+        element.style.left = Math.min(progress / 10, 200) + 'px';
+        
+        if (progress < 2000) {
+            requestAnimationFrame(animation);
+        }
+    }
+    
+    requestAnimationFrame(animation);
+}
+
+// ✅ Good - Debounce expensive operations
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+const debouncedSearch = debounce(function(query) {
+    // Expensive search operation
+    performSearch(query);
+}, 300);
+
+// ✅ Good - Use Intersection Observer for lazy loading
+const lazyImageObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const img = entry.target;
+            img.src = img.dataset.src;
+            img.classList.remove('lazy');
+            lazyImageObserver.unobserve(img);
+        }
+    });
+});
+
+document.querySelectorAll('img[data-src]').forEach(img => {
+    lazyImageObserver.observe(img);
+});</code></pre>
+        
+        <h3>2. Accessibility Best Practices</h3>
+        <pre><code>// ✅ Good - Keyboard navigation
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Tab') {
+        // Handle tab navigation
+        const focusableElements = document.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+        
+        if (event.shiftKey) {
+            if (document.activeElement === firstElement) {
+                lastElement.focus();
+                event.preventDefault();
+            }
+        } else {
+            if (document.activeElement === lastElement) {
+                firstElement.focus();
+                event.preventDefault();
+            }
+        }
+    }
+});
+
+// ✅ Good - ARIA attributes
+function createAccessibleButton(text, onClick) {
+    const button = document.createElement('button');
+    button.textContent = text;
+    button.setAttribute('aria-label', text);
+    button.addEventListener('click', onClick);
+    
+    return button;
+}
+
+// ✅ Good - Screen reader announcements
+function announceToScreenReader(message) {
+    const announcement = document.createElement('div');
+    announcement.setAttribute('aria-live', 'polite');
+    announcement.setAttribute('aria-atomic', 'true');
+    announcement.className = 'sr-only';
+    announcement.textContent = message;
+    
+    document.body.appendChild(announcement);
+    
+    setTimeout(() => {
+        document.body.removeChild(announcement);
+    }, 1000);
+}
+
+// ✅ Good - Focus management
+function trapFocus(element) {
+    const focusableElements = element.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    
+    element.addEventListener('keydown', function(event) {
+        if (event.key === 'Tab') {
+            if (event.shiftKey) {
+                if (document.activeElement === firstElement) {
+                    lastElement.focus();
+                    event.preventDefault();
+                }
+            } else {
+                if (document.activeElement === lastElement) {
+                    firstElement.focus();
+                    event.preventDefault();
+                }
+            }
+        }
+    });
+    
+    firstElement.focus();
+}</code></pre>
+        
+        <h2>Kết luận</h2>
+        <p>
+          DOM và Events là nền tảng của việc tạo ra các ứng dụng web tương tác:
+        </p>
+        <ul class="list">
+          <li><strong>Event delegation</strong> giúp tối ưu performance và memory</li>
+          <li><strong>Modern APIs</strong> như Intersection Observer và Mutation Observer</li>
+          <li><strong>Performance optimization</strong> với batching và requestAnimationFrame</li>
+          <li><strong>Memory management</strong> để tránh memory leaks</li>
+          <li><strong>Accessibility</strong> với ARIA và keyboard navigation</li>
+          <li><strong>Custom events</strong> cho communication giữa components</li>
+        </ul>
+        <p>
+          Việc nắm vững DOM và Events giúp bạn tạo ra các ứng dụng web hiệu quả, accessible và dễ bảo trì.
+        </p>
+    </main>
+  </body>
+  </html>
+
+

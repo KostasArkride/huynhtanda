@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Liên hệ — Huỳnh Tấn Đạt</title>
+    <meta name="description" content="Trang liên hệ để gửi lời nhắn cho Huỳnh Tấn Đạt">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/smooth-transitions.js"></script>
+  </head>
+  <body>
+    <div class="parallax-bg"></div>
+    <header class="site-header">
+      <nav class="nav">
+        <a class="brand hover-blur pulse-blur" href="index.html">HUỲNH TẤN ĐẠT</a>
+        <ul>
+          <li><a class="hover-blur" href="index.html">Home</a></li>
+          <li><a class="hover-blur" href="blog.html">Blog</a></li>
+          <li><a class="hover-blur" href="cv.html">CV</a></li>
+          <li><a class="active hover-blur" href="contact.html">Liên hệ</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container reveal">
+      <section class="grid">
+        <article class="card reveal delay-1">
+          <h1>Liên hệ</h1>
+          <p>Nếu bạn có góp ý hay cơ hội hợp tác, hãy gửi lời nhắn:</p>
+          <form class="form" onsubmit="event.preventDefault(); alert('Cảm ơn bạn! Mình sẽ phản hồi sớm.');">
+            <label>
+              Họ và tên
+              <input type="text" name="name" placeholder="Nhập họ tên" required>
+            </label>
+            <label>
+              Email
+              <input type="email" name="email" placeholder="your@email.com" required>
+            </label>
+            <label>
+              Nội dung
+              <textarea name="message" rows="5" placeholder="Lời nhắn..." required></textarea>
+            </label>
+            <button type="submit" class="btn">Gửi</button>
+          </form>
+        </article>
+      </section>
+
+      <section class="card contact-info reveal delay-2">
+        <h2>Thông tin liên hệ</h2>
+        <ul class="list info-list">
+          <li><strong>Email</strong>: zorosofgamer900@gmail.com</li>
+          <li><strong>GitHub</strong>: @an-dev</li>
+          <li><strong>Địa chỉ</strong>: Việt Nam</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="site-footer wave-blur">
+      <small>© 2025 Huỳnh Tấn Đạt</small>
+    </footer>
+  </body>
+  </html>
+
+

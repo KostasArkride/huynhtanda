@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CV — Huỳnh Tấn Đạt</title>
+    <meta name="description" content="Curriculum Vitae của Huỳnh Tấn Đạt">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/smooth-transitions.js"></script>
+    <style>
+      @media print {
+        .site-header, .site-footer, .back { display: none !important; }
+        body { background: #fff !important; color: #000; }
+        .card { background: #fff; border: none; box-shadow: none; }
+        .cv-grid { grid-template-columns: 280px 1fr; gap: 16px; }
+        .cv-sidebar { border-right: 1px solid #ccc; padding-right: 12px; }
+        a { color: #000; text-decoration: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="parallax-bg"></div>
+    <header class="site-header">
+      <nav class="nav">
+        <a class="brand hover-blur pulse-blur" href="index.html">HUỲNH TẤN ĐẠT</a>
+        <ul>
+          <li><a class="hover-blur" href="index.html">Home</a></li>
+          <li><a class="hover-blur" href="blog.html">Blog</a></li>
+          <li><a class="active hover-blur" href="cv.html">CV</a></li>
+          <li><a class="hover-blur" href="contact.html">Liên hệ</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container reveal">
+      <a class="back hover-blur" href="index.html">← Quay lại</a>
+      <section class="card cv-grid reveal">
+        <aside class="cv-sidebar">
+          <div class="avatar reveal delay-1" style="width:160px;height:160px;">
+            <img src="image/470514295_597904466089996_5616792299511223983_n.jpg" alt="Huỳnh Tấn Đạt">
+          </div>
+          <h1 class="cv-name reveal delay-2">Huỳnh Tấn Đạt</h1>
+          <div class="muted">Sinh viên năm 4 — HUTECH</div>
+          <div class="muted">Chuyên ngành: An toàn thông tin</div>
+          <div class="cv-contact">
+            <div>Email: <a href="mailto:zorosofgamer900@gmail.com">zorosofgamer900@gmail.com</a></div>
+            <div>GitHub: @an-dev</div>
+            <div>Địa chỉ: Việt Nam</div>
+          </div>
+          <div class="cv-section">
+            <h2>Kỹ năng</h2>
+            <ul class="list">
+              <li>Java (OOP, Concurrency, JDBC), Maven/Gradle</li>
+              <li>JavaScript/Node.js (ES6+, Async/Await, DOM)</li>
+              <li>HTTP, TCP/UDP cơ bản, REST API</li>
+              <li>SQL cơ bản (PostgreSQL/MySQL)</li>
+              <li>Git, CLI, Linux cơ bản</li>
+            </ul>
+          </div>
+        </aside>
+        <div class="cv-main reveal delay-2">
+          <div class="cv-section">
+            <h2>Tóm tắt</h2>
+            <p>Lập trình viên định hướng backend và lập trình mạng. Ưu tiên code rõ ràng, an toàn, hiệu năng; quen làm việc với Java và JavaScript/Node.js, có kiến thức nền tảng về giao thức mạng.</p>
+          </div>
+          <div class="cv-section">
+            <h2>Kinh nghiệm/ Dự án</h2>
+            <h3>Mini Server Java xử lý socket</h3>
+            <ul class="list">
+              <li>Thiết kế server TCP dùng thread pool (ExecutorService) phục vụ nhiều client.</li>
+              <li>Áp dụng synchronized/Lock đảm bảo an toàn dữ liệu chia sẻ.</li>
+            </ul>
+            <h3>REST API quản lý thiết bị mạng (Node.js)</h3>
+            <ul class="list">
+              <li>Xây dựng API CRUD, xác thực cơ bản, phân trang.</li>
+              <li>Viết script npm để tự động hoá tác vụ phát triển.</li>
+            </ul>
+            <h3>Demo JDBC</h3>
+            <ul class="list">
+              <li>Kết nối DB qua JDBC, sử dụng PreparedStatement và transaction.</li>
+              <li>Viết truy vấn tối giản và ánh xạ kết quả.</li>
+            </ul>
+          </div>
+          <div class="cv-section">
+            <h2>Học vấn & Chứng chỉ</h2>
+            <ul class="list">
+              <li>HUTECH — Sinh viên năm 4, An toàn thông tin</li>
+              <li>Các khoá: Java OOP/Concurrency, JavaScript ES6+, Node.js</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer wave-blur">
+      <small>© 2025 Huỳnh Tấn Đạt</small>
+    </footer>
+  </body>
+  </html>
+
+

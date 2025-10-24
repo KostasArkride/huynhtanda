@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Demo Hiệu Ứng Motion Blur — Huỳnh Tấn Đạt</title>
+    <meta name="description" content="Demo tất cả các hiệu ứng motion blur và chuyển động">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+      .demo-section {
+        margin: 40px 0;
+        padding: 20px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--panel);
+      }
+      .demo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+      }
+      .demo-item {
+        padding: 20px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        text-align: center;
+        min-height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .demo-title {
+        color: var(--brand);
+        margin-bottom: 10px;
+        font-size: 18px;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="parallax-bg"></div>
+    <header class="site-header">
+      <nav class="nav">
+        <a class="brand hover-blur pulse-blur" href="index.html">HUỲNH TẤN ĐẠT</a>
+        <ul>
+          <li><a class="hover-blur" href="index.html">Home</a></li>
+          <li><a class="hover-blur" href="blog.html">Blog</a></li>
+          <li><a class="hover-blur" href="cv.html">CV</a></li>
+          <li><a class="hover-blur" href="contact.html">Liên hệ</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section class="hero card reveal">
+        <h1 class="text-reveal">Demo Hiệu Ứng Motion Blur</h1>
+        <p>Trang này hiển thị tất cả các hiệu ứng chuyển động và motion blur đã được tạo cho website.</p>
+      </section>
+
+      <section class="demo-section">
+        <h2 class="demo-title">Hiệu Ứng Lướt Ngang</h2>
+        <div class="demo-grid">
+          <div class="demo-item slide-left">Slide Left</div>
+          <div class="demo-item slide-right">Slide Right</div>
+          <div class="demo-item slide-in-top">Slide In Top</div>
+          <div class="demo-item slide-in-bottom">Slide In Bottom</div>
+        </div>
+      </section>
+
+      <section class="demo-section">
+        <h2 class="demo-title">Hiệu Ứng Floating & Wave</h2>
+        <div class="demo-grid">
+          <div class="demo-item floating">Floating</div>
+          <div class="demo-item floating-delayed">Floating Delayed</div>
+          <div class="demo-item wave-blur">Wave Blur</div>
+          <div class="demo-item bounce-blur">Bounce Blur</div>
+        </div>
+      </section>
+
+      <section class="demo-section">
+        <h2 class="demo-title">Hiệu Ứng Pulse & Zoom</h2>
+        <div class="demo-grid">
+          <div class="demo-item pulse-blur">Pulse Blur</div>
+          <div class="demo-item zoom-blur">Zoom Blur</div>
+          <div class="demo-item rotate-blur">Rotate Blur</div>
+          <div class="demo-item shake-blur">Shake Blur</div>
+        </div>
+      </section>
+
+      <section class="demo-section">
+        <h2 class="demo-title">Hiệu Ứng Loading & Glitch</h2>
+        <div class="demo-grid">
+          <div class="demo-item loading-blur">Loading Blur</div>
+          <div class="demo-item glitch-blur">Glitch Blur</div>
+          <div class="demo-item hover-blur">Hover Blur (hover me)</div>
+          <div class="demo-item reveal">Reveal Effect</div>
+        </div>
+      </section>
+
+      <section class="demo-section">
+        <h2 class="demo-title">Hiệu Ứng Text Reveal</h2>
+        <div class="demo-grid">
+          <div class="demo-item text-reveal">Text Reveal</div>
+          <div class="demo-item reveal delay-1">Reveal Delay 1</div>
+          <div class="demo-item reveal delay-2">Reveal Delay 2</div>
+          <div class="demo-item reveal delay-3">Reveal Delay 3</div>
+        </div>
+      </section>
+
+      <section class="demo-section">
+        <h2 class="demo-title">Kết Hợp Nhiều Hiệu Ứng</h2>
+        <div class="demo-grid">
+          <div class="demo-item slide-left hover-blur pulse-blur">Slide + Hover + Pulse</div>
+          <div class="demo-item slide-right floating loading-blur">Slide + Float + Loading</div>
+          <div class="demo-item wave-blur glitch-blur">Wave + Glitch</div>
+          <div class="demo-item bounce-blur zoom-blur">Bounce + Zoom</div>
+        </div>
+      </section>
+
+      <section class="demo-section">
+        <h2 class="demo-title">Hướng Dẫn Sử Dụng</h2>
+        <div class="card">
+          <h3>Các Class Hiệu Ứng Có Sẵn:</h3>
+          <ul class="list">
+            <li><strong>slide-left, slide-right</strong>: Lướt từ trái/phải với motion blur</li>
+            <li><strong>slide-in-top, slide-in-bottom</strong>: Lướt từ trên/dưới</li>
+            <li><strong>floating, floating-delayed</strong>: Hiệu ứng bay lơ lửng</li>
+            <li><strong>wave-blur</strong>: Hiệu ứng sóng với motion blur</li>
+            <li><strong>pulse-blur</strong>: Hiệu ứng nhấp nháy với blur</li>
+            <li><strong>zoom-blur</strong>: Hiệu ứng phóng to với blur</li>
+            <li><strong>rotate-blur</strong>: Hiệu ứng xoay với blur</li>
+            <li><strong>shake-blur</strong>: Hiệu ứng rung với blur</li>
+            <li><strong>bounce-blur</strong>: Hiệu ứng nảy với blur</li>
+            <li><strong>loading-blur</strong>: Hiệu ứng loading với blur</li>
+            <li><strong>glitch-blur</strong>: Hiệu ứng glitch với blur</li>
+            <li><strong>hover-blur</strong>: Hiệu ứng blur khi hover</li>
+            <li><strong>text-reveal</strong>: Hiệu ứng reveal cho text</li>
+            <li><strong>reveal, delay-1, delay-2, delay-3</strong>: Hiệu ứng reveal với delay</li>
+          </ul>
+          <p><strong>Lưu ý:</strong> Có thể kết hợp nhiều class để tạo hiệu ứng phức tạp hơn!</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer wave-blur">
+      <small>© 2025 Huỳnh Tấn Đạt — Demo Motion Blur Effects</small>
+    </footer>
+  </body>
+</html>

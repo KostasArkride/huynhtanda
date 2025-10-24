@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Java OOP cơ bản: lớp, đối tượng, kế thừa</title>
+    <meta name="description" content="Ôn lại nền tảng OOP trong Java với ví dụ ngắn gọn.">
+    <link rel="stylesheet" href="../css/styles.css">
+  </head>
+  <body>
+    <main class="container post">
+      <a class="back" href="../blog.html">← Quay lại Blog</a>
+      <h1>Java OOP cơ bản: lớp, đối tượng, kế thừa</h1>
+      <div class="meta">Chủ đề: <span class="tag tag-java">Java</span></div>
+      <article class="card">
+        <h2>Giới thiệu về OOP</h2>
+        <p>
+          Object-Oriented Programming (OOP) là một mô hình lập trình dựa trên khái niệm "đối tượng" (objects), 
+          chứa dữ liệu (thuộc tính) và mã (phương thức). OOP giúp tổ chức code một cách có cấu trúc, dễ bảo trì và mở rộng.
+        </p>
+        
+        <h2>Bốn trụ cột của OOP</h2>
+        
+        <h3>1. Encapsulation (Đóng gói)</h3>
+        <p>
+          Đóng gói là việc che giấu chi tiết triển khai bên trong và chỉ cung cấp interface công khai. 
+          Trong Java, chúng ta sử dụng access modifiers để kiểm soát quyền truy cập:
+        </p>
+        <ul class="list">
+          <li><strong>private</strong>: Chỉ có thể truy cập trong cùng lớp</li>
+          <li><strong>protected</strong>: Có thể truy cập trong cùng lớp và lớp con</li>
+          <li><strong>public</strong>: Có thể truy cập từ bất kỳ đâu</li>
+          <li><strong>package-private</strong> (mặc định): Có thể truy cập trong cùng package</li>
+        </ul>
+        
+        <h3>2. Abstraction (Trừu tượng)</h3>
+        <p>
+          Trừu tượng cho phép chúng ta tập trung vào những gì đối tượng làm thay vì cách nó làm. 
+          Java cung cấp abstract classes và interfaces để đạt được điều này.
+        </p>
+        
+        <h3>3. Inheritance (Kế thừa)</h3>
+        <p>
+          Kế thừa cho phép một lớp (lớp con) kế thừa các thuộc tính và phương thức từ lớp khác (lớp cha). 
+          Điều này giúp tái sử dụng code và tạo ra mối quan hệ "is-a".
+        </p>
+        
+        <h3>4. Polymorphism (Đa hình)</h3>
+        <p>
+          Đa hình cho phép các đối tượng khác nhau phản ứng khác nhau với cùng một thông điệp. 
+          Trong Java, điều này được thực hiện thông qua method overriding và method overloading.
+        </p>
+        
+        <h2>SOLID Principles</h2>
+        <p>
+          SOLID là năm nguyên tắc thiết kế hướng đối tượng giúp tạo ra code dễ bảo trì và mở rộng:
+        </p>
+        
+        <h3>S - Single Responsibility Principle (SRP)</h3>
+        <p>
+          Mỗi lớp chỉ nên có một lý do để thay đổi. Một lớp chỉ nên có một trách nhiệm duy nhất.
+        </p>
+        
+        <h3>O - Open/Closed Principle (OCP)</h3>
+        <p>
+          Các thực thể phần mềm nên mở để mở rộng nhưng đóng để sửa đổi.
+        </p>
+        
+        <h3>L - Liskov Substitution Principle (LSP)</h3>
+        <p>
+          Các đối tượng của lớp con phải có thể thay thế các đối tượng của lớp cha mà không làm thay đổi tính đúng đắn của chương trình.
+        </p>
+        
+        <h3>I - Interface Segregation Principle (ISP)</h3>
+        <p>
+          Không nên buộc client phụ thuộc vào các interface mà chúng không sử dụng.
+        </p>
+        
+        <h3>D - Dependency Inversion Principle (DIP)</h3>
+        <p>
+          Các module cấp cao không nên phụ thuộc vào các module cấp thấp. Cả hai nên phụ thuộc vào abstraction.
+        </p>
+        
+        <h2>Best Practices trong OOP</h2>
+        
+        <h3>Composition over Inheritance</h3>
+        <p>
+          Ưu tiên sử dụng composition (has-a relationship) thay vì inheritance (is-a relationship) 
+          khi có thể. Điều này giúp code linh hoạt hơn và tránh các vấn đề của deep inheritance hierarchy.
+        </p>
+        
+        <h3>Immutable Objects</h3>
+        <p>
+          Tạo các đối tượng bất biến (immutable) giúp code an toàn hơn trong môi trường đa luồng. 
+          Sử dụng <code>final</code> keyword và không cung cấp setter methods.
+        </p>
+        
+        <h3>Value Objects vs Entities</h3>
+        <p>
+          <strong>Value Objects</strong>: Được so sánh theo giá trị (ví dụ: Money, Address)<br>
+          <strong>Entities</strong>: Được so sánh theo định danh (ví dụ: User, Order)
+        </p>
+        
+        <h3>Avoid Encapsulation Leaks</h3>
+        <p>
+          Không trả về tham chiếu trực tiếp đến các collection nội bộ. 
+          Thay vào đó, trả về bản sao hoặc unmodifiable collection.
+        </p>
+        <h2>Ví dụ thực tế: Hệ thống quản lý thiết bị mạng</h2>
+        
+        <h3>1. Tạo Abstract Class và Interface</h3>
+        <pre><code>// Interface định nghĩa hành vi chung
+public interface NetworkDevice {
+    void connect();
+    void disconnect();
+    String getStatus();
+}
+
+// Abstract class cung cấp implementation chung
+public abstract class Device implements NetworkDevice {
+    protected final String name;
+    protected final String ipAddress;
+    protected boolean isConnected;
+    
+    public Device(String name, String ipAddress) {
+        this.name = name;
+        this.ipAddress = ipAddress;
+        this.isConnected = false;
+    }
+    
+    @Override
+    public void connect() {
+        if (!isConnected) {
+            isConnected = true;
+            System.out.println(name + " đã kết nối");
+        }
+    }
+    
+    @Override
+    public void disconnect() {
+        if (isConnected) {
+            isConnected = false;
+            System.out.println(name + " đã ngắt kết nối");
+        }
+    }
+    
+    @Override
+    public String getStatus() {
+        return name + " (" + ipAddress + ") - " + 
+               (isConnected ? "Đã kết nối" : "Chưa kết nối");
+    }
+    
+    // Abstract method - lớp con phải implement
+    public abstract void performMainFunction();
+    
+    // Getters
+    public String getName() { return name; }
+    public String getIpAddress() { return ipAddress; }
+    public boolean isConnected() { return isConnected; }
+}</code></pre>
+        
+        <h3>2. Tạo Concrete Classes</h3>
+        <pre><code>// Router class
+public class Router extends Device {
+    private final int portCount;
+    private final List<String> routingTable;
+    
+    public Router(String name, String ipAddress, int portCount) {
+        super(name, ipAddress);
+        this.portCount = portCount;
+        this.routingTable = new ArrayList<>();
+    }
+    
+    @Override
+    public void performMainFunction() {
+        System.out.println("Router " + name + " đang định tuyến gói tin...");
+        System.out.println("Sử dụng " + portCount + " cổng");
+    }
+    
+    public void addRoute(String destination, String gateway) {
+        routingTable.add(destination + " -> " + gateway);
+        System.out.println("Đã thêm route: " + destination + " -> " + gateway);
+    }
+    
+    public void showRoutingTable() {
+        System.out.println("Bảng định tuyến của " + name + ":");
+        routingTable.forEach(System.out::println);
+    }
+}
+
+// Switch class
+public class Switch extends Device {
+    private final int portCount;
+    private final Map<String, Integer> macTable;
+    
+    public Switch(String name, String ipAddress, int portCount) {
+        super(name, ipAddress);
+        this.portCount = portCount;
+        this.macTable = new HashMap<>();
+    }
+    
+    @Override
+    public void performMainFunction() {
+        System.out.println("Switch " + name + " đang chuyển tiếp frame...");
+        System.out.println("Sử dụng " + portCount + " cổng");
+    }
+    
+    public void learnMacAddress(String macAddress, int port) {
+        macTable.put(macAddress, port);
+        System.out.println("Đã học MAC " + macAddress + " tại port " + port);
+    }
+    
+    public void showMacTable() {
+        System.out.println("Bảng MAC của " + name + ":");
+        macTable.forEach((mac, port) -> 
+            System.out.println(mac + " -> Port " + port));
+    }
+}
+
+// Firewall class
+public class Firewall extends Device {
+    private final List<String> allowedPorts;
+    private final List<String> blockedIPs;
+    
+    public Firewall(String name, String ipAddress) {
+        super(name, ipAddress);
+        this.allowedPorts = new ArrayList<>();
+        this.blockedIPs = new ArrayList<>();
+    }
+    
+    @Override
+    public void performMainFunction() {
+        System.out.println("Firewall " + name + " đang kiểm tra và lọc traffic...");
+    }
+    
+    public void allowPort(int port) {
+        allowedPorts.add(String.valueOf(port));
+        System.out.println("Đã cho phép port " + port);
+    }
+    
+    public void blockIP(String ip) {
+        blockedIPs.add(ip);
+        System.out.println("Đã chặn IP " + ip);
+    }
+    
+    public boolean isTrafficAllowed(String sourceIP, int port) {
+        if (blockedIPs.contains(sourceIP)) {
+            System.out.println("Traffic từ " + sourceIP + " bị chặn");
+            return false;
+        }
+        if (!allowedPorts.contains(String.valueOf(port))) {
+            System.out.println("Port " + port + " không được phép");
+            return false;
+        }
+        System.out.println("Traffic từ " + sourceIP + " qua port " + port + " được phép");
+        return true;
+    }
+}</code></pre>
+        
+        <h3>3. Ví dụ sử dụng với Polymorphism</h3>
+        <pre><code>public class NetworkManager {
+    public static void main(String[] args) {
+        // Tạo các thiết bị
+        Router router = new Router("CoreRouter", "192.168.1.1", 8);
+        Switch switch1 = new Switch("AccessSwitch", "192.168.1.2", 24);
+        Firewall firewall = new Firewall("EdgeFirewall", "192.168.1.3");
+        
+        // Sử dụng polymorphism
+        List<Device> devices = Arrays.asList(router, switch1, firewall);
+        
+        System.out.println("=== Khởi động hệ thống mạng ===");
+        
+        // Kết nối tất cả thiết bị
+        for (Device device : devices) {
+            device.connect();
+            device.performMainFunction();
+            System.out.println("Trạng thái: " + device.getStatus());
+            System.out.println("---");
+        }
+        
+        // Cấu hình router
+        router.addRoute("10.0.0.0/8", "192.168.1.1");
+        router.addRoute("172.16.0.0/12", "192.168.1.1");
+        router.showRoutingTable();
+        
+        // Cấu hình switch
+        switch1.learnMacAddress("AA:BB:CC:DD:EE:01", 1);
+        switch1.learnMacAddress("AA:BB:CC:DD:EE:02", 2);
+        switch1.showMacTable();
+        
+        // Cấu hình firewall
+        firewall.allowPort(80);
+        firewall.allowPort(443);
+        firewall.blockIP("192.168.1.100");
+        firewall.isTrafficAllowed("192.168.1.50", 80);
+        firewall.isTrafficAllowed("192.168.1.100", 80);
+        
+        System.out.println("\n=== Tắt hệ thống mạng ===");
+        for (Device device : devices) {
+            device.disconnect();
+        }
+    }
+}</code></pre>
+        
+        <h2>Design Patterns áp dụng</h2>
+        
+        <h3>1. Strategy Pattern</h3>
+        <pre><code>// Interface cho các chiến lược xử lý traffic
+public interface TrafficProcessor {
+    void processTraffic(String data);
+}
+
+// Concrete strategies
+public class HttpProcessor implements TrafficProcessor {
+    @Override
+    public void processTraffic(String data) {
+        System.out.println("Xử lý HTTP traffic: " + data);
+    }
+}
+
+public class HttpsProcessor implements TrafficProcessor {
+    @Override
+    public void processTraffic(String data) {
+        System.out.println("Xử lý HTTPS traffic (encrypted): " + data);
+    }
+}
+
+// Context class sử dụng strategy
+public class TrafficManager {
+    private TrafficProcessor processor;
+    
+    public void setProcessor(TrafficProcessor processor) {
+        this.processor = processor;
+    }
+    
+    public void handleTraffic(String data) {
+        processor.processTraffic(data);
+    }
+}</code></pre>
+        
+        <h3>2. Observer Pattern</h3>
+        <pre><code>// Observer interface
+public interface NetworkObserver {
+    void update(String event);
+}
+
+// Subject interface
+public interface NetworkSubject {
+    void addObserver(NetworkObserver observer);
+    void removeObserver(NetworkObserver observer);
+    void notifyObservers(String event);
+}
+
+// Concrete subject
+public class NetworkMonitor implements NetworkSubject {
+    private List<NetworkObserver> observers = new ArrayList<>();
+    private String status = "Normal";
+    
+    @Override
+    public void addObserver(NetworkObserver observer) {
+        observers.add(observer);
+    }
+    
+    @Override
+    public void removeObserver(NetworkObserver observer) {
+        observers.remove(observer);
+    }
+    
+    @Override
+    public void notifyObservers(String event) {
+        for (NetworkObserver observer : observers) {
+            observer.update(event);
+        }
+    }
+    
+    public void setStatus(String status) {
+        this.status = status;
+        notifyObservers("Status changed to: " + status);
+    }
+}
+
+// Concrete observer
+public class AlertSystem implements NetworkObserver {
+    @Override
+    public void update(String event) {
+        System.out.println("ALERT: " + event);
+    }
+}</code></pre>
+        
+        <h2>Best Practices và Lưu ý</h2>
+        
+        <h3>1. Naming Conventions</h3>
+        <ul class="list">
+          <li><strong>Classes</strong>: PascalCase (Device, NetworkManager)</li>
+          <li><strong>Methods và Variables</strong>: camelCase (getStatus, isConnected)</li>
+          <li><strong>Constants</strong>: UPPER_SNAKE_CASE (MAX_CONNECTIONS)</li>
+          <li><strong>Packages</strong>: lowercase (com.example.network)</li>
+        </ul>
+        
+        <h3>2. Method Design</h3>
+        <ul class="list">
+          <li>Giữ methods ngắn và tập trung vào một nhiệm vụ</li>
+          <li>Sử dụng meaningful names</li>
+          <li>Avoid side effects khi có thể</li>
+          <li>Return immutable objects</li>
+        </ul>
+        
+        <h3>3. Error Handling</h3>
+        <ul class="list">
+          <li>Sử dụng checked exceptions cho recoverable errors</li>
+          <li>Sử dụng unchecked exceptions cho programming errors</li>
+          <li>Provide meaningful error messages</li>
+          <li>Log errors appropriately</li>
+        </ul>
+        
+        <h2>Bài tập thực hành</h2>
+        
+        <h3>Bài tập 1: Mở rộng hệ thống</h3>
+        <p>Tạo thêm các lớp sau:</p>
+        <ul class="list">
+          <li><strong>LoadBalancer</strong>: Phân tải traffic đến nhiều server</li>
+          <li><strong>ProxyServer</strong>: Cache và forward requests</li>
+          <li><strong>VPNGateway</strong>: Tạo tunnel bảo mật</li>
+        </ul>
+        
+        <h3>Bài tập 2: Implement Design Patterns</h3>
+        <ul class="list">
+          <li>Áp dụng Factory Pattern để tạo devices</li>
+          <li>Sử dụng Builder Pattern cho complex objects</li>
+          <li>Implement Singleton cho configuration manager</li>
+        </ul>
+        
+        <h3>Bài tập 3: Testing</h3>
+        <ul class="list">
+          <li>Viết unit tests cho các methods</li>
+          <li>Tạo mock objects cho testing</li>
+          <li>Test edge cases và error conditions</li>
+        </ul>
+        
+        <h2>Kết luận</h2>
+        <p>
+          OOP trong Java cung cấp một framework mạnh mẽ để tổ chức code phức tạp. 
+          Bằng cách áp dụng các nguyên tắc SOLID và design patterns phù hợp, 
+          chúng ta có thể tạo ra các hệ thống dễ bảo trì, mở rộng và test.
+        </p>
+        <p>
+          Hãy nhớ rằng OOP không phải là silver bullet - hãy sử dụng nó khi phù hợp 
+          và đừng ngại sử dụng functional programming khi cần thiết.
+        </p>
+      </article>
+    </main>
+  </body>
+  </html>
+
+

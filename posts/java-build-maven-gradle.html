@@ -1,0 +1,982 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quản lý phụ thuộc với Maven & Gradle</title>
+    <meta name="description" content="So sánh nhanh Maven và Gradle cho dự án Java.">
+    <link rel="stylesheet" href="../css/styles.css">
+  </head>
+  <body>
+    <main class="container post">
+      <a class="back" href="../blog.html">← Quay lại Blog</a>
+      <h1>Quản lý phụ thuộc với Maven & Gradle</h1>
+      <div class="meta">Chủ đề: <span class="tag tag-java">Java</span></div>
+      <article class="card">
+        <h2>Giới thiệu về Build Tools</h2>
+        <p>
+          Build tools là các công cụ tự động hóa quá trình build, test, package và deploy ứng dụng Java. 
+          Maven và Gradle là hai build tool phổ biến nhất, mỗi cái có ưu điểm riêng phù hợp với các nhu cầu khác nhau.
+        </p>
+        
+        <h2>So sánh Maven vs Gradle</h2>
+        
+        <h3>Maven</h3>
+        <ul class="list">
+          <li><strong>Ưu điểm</strong>: Convention over configuration, ecosystem lớn, tài liệu phong phú</li>
+          <li><strong>Nhược điểm</strong>: XML verbose, khó customize, build chậm</li>
+          <li><strong>Phù hợp</strong>: Dự án enterprise, team lớn, cần standardization</li>
+        </ul>
+        
+        <h3>Gradle</h3>
+        <ul class="list">
+          <li><strong>Ưu điểm</strong>: DSL linh hoạt, build nhanh, incremental build, cache thông minh</li>
+          <li><strong>Nhược điểm</strong>: Learning curve cao, ít plugin hơn Maven</li>
+          <li><strong>Phù hợp</strong>: Dự án phức tạp, cần performance cao, multi-language</li>
+        </ul>
+        
+        <h2>Maven Fundamentals</h2>
+        
+        <h3>1. Project Structure</h3>
+        <pre><code>project-root/
+├── pom.xml
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/example/
+│   │   └── resources/
+│   └── test/
+│       ├── java/
+│       │   └── com/example/
+│       └── resources/
+└── target/</code></pre>
+        
+        <h3>2. Basic pom.xml</h3>
+        <pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
+    
+    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+    
+    &lt;groupId&gt;com.example&lt;/groupId&gt;
+    &lt;artifactId&gt;network-management&lt;/artifactId&gt;
+    &lt;version&gt;1.0.0&lt;/version&gt;
+    &lt;packaging&gt;jar&lt;/packaging&gt;
+    
+    &lt;name&gt;Network Management System&lt;/name&gt;
+    &lt;description&gt;A system for managing network devices&lt;/description&gt;
+    
+    &lt;properties&gt;
+        &lt;maven.compiler.source&gt;17&lt;/maven.compiler.source&gt;
+        &lt;maven.compiler.target&gt;17&lt;/maven.compiler.target&gt;
+        &lt;project.build.sourceEncoding&gt;UTF-8&lt;/project.build.sourceEncoding&gt;
+        &lt;junit.version&gt;5.9.2&lt;/junit.version&gt;
+        &lt;spring.version&gt;6.0.0&lt;/spring.version&gt;
+    &lt;/properties&gt;
+    
+    &lt;dependencies&gt;
+        &lt;!-- Spring Framework --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-context&lt;/artifactId&gt;
+            &lt;version&gt;${spring.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+        
+        &lt;!-- Database --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;com.zaxxer&lt;/groupId&gt;
+            &lt;artifactId&gt;HikariCP&lt;/artifactId&gt;
+            &lt;version&gt;5.0.1&lt;/version&gt;
+        &lt;/dependency&gt;
+        
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.postgresql&lt;/groupId&gt;
+            &lt;artifactId&gt;postgresql&lt;/artifactId&gt;
+            &lt;version&gt;42.7.2&lt;/version&gt;
+        &lt;/dependency&gt;
+        
+        &lt;!-- Testing --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.junit.jupiter&lt;/groupId&gt;
+            &lt;artifactId&gt;junit-jupiter&lt;/artifactId&gt;
+            &lt;version&gt;${junit.version}&lt;/version&gt;
+            &lt;scope&gt;test&lt;/scope&gt;
+        &lt;/dependency&gt;
+        
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.mockito&lt;/groupId&gt;
+            &lt;artifactId&gt;mockito-core&lt;/artifactId&gt;
+            &lt;version&gt;5.1.1&lt;/version&gt;
+            &lt;scope&gt;test&lt;/scope&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+    
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.11.0&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;source&gt;17&lt;/source&gt;
+                    &lt;target&gt;17&lt;/target&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+            
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.0.0&lt;/version&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+&lt;/project&gt;</code></pre>
+        
+        <h3>3. Maven Lifecycle</h3>
+        <pre><code># Clean phase
+mvn clean
+
+# Compile phase
+mvn compile
+
+# Test phase
+mvn test
+
+# Package phase
+mvn package
+
+# Install phase
+mvn install
+
+# Deploy phase
+mvn deploy
+
+# Run all phases
+mvn clean install
+
+# Skip tests
+mvn clean install -DskipTests
+
+# Run specific test
+mvn test -Dtest=DeviceServiceTest</code></pre>
+        
+        <h2>Gradle Fundamentals</h2>
+        
+        <h3>1. Project Structure</h3>
+        <pre><code>project-root/
+├── build.gradle
+├── settings.gradle
+├── gradle.properties
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/example/
+│   │   └── resources/
+│   └── test/
+│       ├── java/
+│       │   └── com/example/
+│       └── resources/
+└── build/</code></pre>
+        
+        <h3>2. Basic build.gradle</h3>
+        <pre><code>plugins {
+    id 'java'
+    id 'application'
+    id 'org.springframework.boot' version '3.0.0'
+}
+
+group = 'com.example'
+version = '1.0.0'
+sourceCompatibility = '17'
+
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
+}
+
+dependencies {
+    // Spring Framework
+    implementation 'org.springframework:spring-context:6.0.0'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    
+    // Database
+    implementation 'com.zaxxer:HikariCP:5.0.1'
+    implementation 'org.postgresql:postgresql:42.7.2'
+    
+    // Testing
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
+    testImplementation 'org.mockito:mockito-core:5.1.1'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+application {
+    mainClass = 'com.example.NetworkManagementApplication'
+}
+
+// Custom tasks
+task buildInfo {
+    doLast {
+        println "Building ${project.name} version ${project.version}"
+        println "Java version: ${System.getProperty('java.version')}"
+    }
+}
+
+// Gradle wrapper
+wrapper {
+    gradleVersion = '8.0'
+}</code></pre>
+        
+        <h3>3. Gradle Tasks</h3>
+        <pre><code># List all tasks
+./gradlew tasks
+
+# Build project
+./gradlew build
+
+# Run tests
+./gradlew test
+
+# Clean build
+./gradlew clean build
+
+# Run application
+./gradlew run
+
+# Custom task
+./gradlew buildInfo
+
+# Parallel build
+./gradlew build --parallel
+
+# Build with specific profile
+./gradlew build -Pprofile=production</code></pre>
+        
+        <h2>Dependency Management</h2>
+        
+        <h3>1. Maven Dependency Management</h3>
+        <pre><code>&lt;!-- Parent POM for dependency management --&gt;
+&lt;project&gt;
+    &lt;groupId&gt;com.example&lt;/groupId&gt;
+    &lt;artifactId&gt;parent-pom&lt;/artifactId&gt;
+    &lt;version&gt;1.0.0&lt;/version&gt;
+    &lt;packaging&gt;pom&lt;/packaging&gt;
+    
+    &lt;dependencyManagement&gt;
+        &lt;dependencies&gt;
+            &lt;dependency&gt;
+                &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+                &lt;artifactId&gt;spring-framework-bom&lt;/artifactId&gt;
+                &lt;version&gt;6.0.0&lt;/version&gt;
+                &lt;type&gt;pom&lt;/type&gt;
+                &lt;scope&gt;import&lt;/scope&gt;
+            &lt;/dependency&gt;
+            
+            &lt;dependency&gt;
+                &lt;groupId&gt;com.example&lt;/groupId&gt;
+                &lt;artifactId&gt;common-utils&lt;/artifactId&gt;
+                &lt;version&gt;${common-utils.version}&lt;/version&gt;
+            &lt;/dependency&gt;
+        &lt;/dependencies&gt;
+    &lt;/dependencyManagement&gt;
+    
+    &lt;properties&gt;
+        &lt;common-utils.version&gt;2.1.0&lt;/common-utils.version&gt;
+    &lt;/properties&gt;
+&lt;/project&gt;
+
+&lt;!-- Child POM --&gt;
+&lt;project&gt;
+    &lt;parent&gt;
+        &lt;groupId&gt;com.example&lt;/groupId&gt;
+        &lt;artifactId&gt;parent-pom&lt;/artifactId&gt;
+        &lt;version&gt;1.0.0&lt;/version&gt;
+    &lt;/parent&gt;
+    
+    &lt;artifactId&gt;network-service&lt;/artifactId&gt;
+    
+    &lt;dependencies&gt;
+        &lt;!-- No need to specify version --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-context&lt;/artifactId&gt;
+        &lt;/dependency&gt;
+        
+        &lt;dependency&gt;
+            &lt;groupId&gt;com.example&lt;/groupId&gt;
+            &lt;artifactId&gt;common-utils&lt;/artifactId&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+&lt;/project&gt;</code></pre>
+        
+        <h3>2. Gradle Dependency Management</h3>
+        <pre><code>// build.gradle (root)
+plugins {
+    id 'java-platform'
+}
+
+dependencies {
+    constraints {
+        api 'org.springframework:spring-context:6.0.0'
+        api 'com.zaxxer:HikariCP:5.0.1'
+        api 'org.postgresql:postgresql:42.7.2'
+    }
+}
+
+// build.gradle (module)
+plugins {
+    id 'java'
+}
+
+dependencies {
+    // Use platform for version management
+    implementation platform(project(':platform'))
+    
+    // Dependencies without versions
+    implementation 'org.springframework:spring-context'
+    implementation 'com.zaxxer:HikariCP'
+    implementation 'org.postgresql:postgresql'
+    
+    // Test dependencies
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.mockito:mockito-core'
+}
+
+// gradle.properties
+springVersion=6.0.0
+hikariVersion=5.0.1
+postgresqlVersion=42.7.2</code></pre>
+        
+        <h2>Multi-Module Projects</h2>
+        
+        <h3>1. Maven Multi-Module</h3>
+        <pre><code>&lt;!-- Parent pom.xml --&gt;
+&lt;project&gt;
+    &lt;groupId&gt;com.example&lt;/groupId&gt;
+    &lt;artifactId&gt;network-management-parent&lt;/artifactId&gt;
+    &lt;version&gt;1.0.0&lt;/version&gt;
+    &lt;packaging&gt;pom&lt;/packaging&gt;
+    
+    &lt;modules&gt;
+        &lt;module&gt;common&lt;/module&gt;
+        &lt;module&gt;core&lt;/module&gt;
+        &lt;module&gt;web&lt;/module&gt;
+        &lt;module&gt;api&lt;/module&gt;
+    &lt;/modules&gt;
+    
+    &lt;properties&gt;
+        &lt;maven.compiler.source&gt;17&lt;/maven.compiler.source&gt;
+        &lt;maven.compiler.target&gt;17&lt;/maven.compiler.target&gt;
+    &lt;/properties&gt;
+    
+    &lt;dependencyManagement&gt;
+        &lt;dependencies&gt;
+            &lt;dependency&gt;
+                &lt;groupId&gt;com.example&lt;/groupId&gt;
+                &lt;artifactId&gt;common&lt;/artifactId&gt;
+                &lt;version&gt;${project.version}&lt;/version&gt;
+            &lt;/dependency&gt;
+        &lt;/dependencies&gt;
+    &lt;/dependencyManagement&gt;
+&lt;/project&gt;
+
+&lt;!-- core/pom.xml --&gt;
+&lt;project&gt;
+    &lt;parent&gt;
+        &lt;groupId&gt;com.example&lt;/groupId&gt;
+        &lt;artifactId&gt;network-management-parent&lt;/artifactId&gt;
+        &lt;version&gt;1.0.0&lt;/version&gt;
+    &lt;/parent&gt;
+    
+    &lt;artifactId&gt;core&lt;/artifactId&gt;
+    
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;com.example&lt;/groupId&gt;
+            &lt;artifactId&gt;common&lt;/artifactId&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+&lt;/project&gt;</code></pre>
+        
+        <h3>2. Gradle Multi-Module</h3>
+        <pre><code>// settings.gradle
+rootProject.name = 'network-management'
+
+include 'common'
+include 'core'
+include 'web'
+include 'api'
+
+// build.gradle (root)
+allprojects {
+    group = 'com.example'
+    version = '1.0.0'
+    
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    
+    java {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    
+    dependencies {
+        testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
+    }
+    
+    test {
+        useJUnitPlatform()
+    }
+}
+
+// core/build.gradle
+dependencies {
+    implementation project(':common')
+    implementation 'org.springframework:spring-context:6.0.0'
+}
+
+// web/build.gradle
+dependencies {
+    implementation project(':core')
+    implementation project(':common')
+    implementation 'org.springframework.boot:spring-boot-starter-web:3.0.0'
+}</code></pre>
+        
+        <h2>Build Profiles</h2>
+        
+        <h3>1. Maven Profiles</h3>
+        <pre><code>&lt;profiles&gt;
+    &lt;profile&gt;
+        &lt;id&gt;development&lt;/id&gt;
+        &lt;activation&gt;
+            &lt;activeByDefault&gt;true&lt;/activeByDefault&gt;
+        &lt;/activation&gt;
+        &lt;properties&gt;
+            &lt;env&gt;dev&lt;/env&gt;
+            &lt;database.url&gt;jdbc:h2:mem:testdb&lt;/database.url&gt;
+        &lt;/properties&gt;
+    &lt;/profile&gt;
+    
+    &lt;profile&gt;
+        &lt;id&gt;production&lt;/id&gt;
+        &lt;properties&gt;
+            &lt;env&gt;prod&lt;/env&gt;
+            &lt;database.url&gt;jdbc:postgresql://prod-db:5432/networkdb&lt;/database.url&gt;
+        &lt;/properties&gt;
+        &lt;build&gt;
+            &lt;plugins&gt;
+                &lt;plugin&gt;
+                    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+                    &lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;
+                    &lt;configuration&gt;
+                        &lt;profiles&gt;production&lt;/profiles&gt;
+                    &lt;/configuration&gt;
+                &lt;/plugin&gt;
+            &lt;/plugins&gt;
+        &lt;/build&gt;
+    &lt;/profile&gt;
+&lt;/profiles&gt;</code></pre>
+        
+        <h3>2. Gradle Profiles</h3>
+        <pre><code>// gradle.properties
+env=development
+databaseUrl=jdbc:h2:mem:testdb
+
+// build.gradle
+def env = project.hasProperty('env') ? project.env : 'development'
+
+sourceSets {
+    main {
+        resources {
+            srcDirs = ["src/main/resources", "src/main/resources-${env}"]
+        }
+    }
+}
+
+task buildForEnvironment {
+    doLast {
+        println "Building for environment: ${env}"
+        if (env == 'production') {
+            println "Using production database configuration"
+        } else {
+            println "Using development database configuration"
+        }
+    }
+}
+
+// Usage: ./gradlew build -Penv=production</code></pre>
+        
+        <h2>Testing Integration</h2>
+        
+        <h3>1. Maven Testing</h3>
+        <pre><code>&lt;build&gt;
+    &lt;plugins&gt;
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+            &lt;version&gt;3.0.0&lt;/version&gt;
+            &lt;configuration&gt;
+                &lt;includes&gt;
+                    &lt;include&gt;**/*Test.java&lt;/include&gt;
+                    &lt;include&gt;**/*Tests.java&lt;/include&gt;
+                &lt;/includes&gt;
+                &lt;excludes&gt;
+                    &lt;exclude&gt;**/*IntegrationTest.java&lt;/exclude&gt;
+                &lt;/excludes&gt;
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+        
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-failsafe-plugin&lt;/artifactId&gt;
+            &lt;version&gt;3.0.0&lt;/version&gt;
+            &lt;executions&gt;
+                &lt;execution&gt;
+                    &lt;goals&gt;
+                        &lt;goal&gt;integration-test&lt;/goal&gt;
+                        &lt;goal&gt;verify&lt;/goal&gt;
+                    &lt;/goals&gt;
+                &lt;/execution&gt;
+            &lt;/executions&gt;
+        &lt;/plugin&gt;
+    &lt;/plugins&gt;
+&lt;/build&gt;</code></pre>
+        
+        <h3>2. Gradle Testing</h3>
+        <pre><code>test {
+    useJUnitPlatform()
+    
+    // Test configuration
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
+    
+    // Test reports
+    reports {
+        html.required = true
+        junitXml.required = true
+    }
+    
+    // Test filtering
+    filter {
+        includeTestsMatching "*Test"
+        excludeTestsMatching "*IntegrationTest"
+    }
+}
+
+// Integration tests
+sourceSets {
+    integrationTest {
+        java.srcDir file('src/integrationTest/java')
+        resources.srcDir file('src/integrationTest/resources')
+        compileClasspath += main.output + test.output
+        runtimeClasspath += main.output + test.output
+    }
+}
+
+task integrationTest(type: Test) {
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+}
+
+check.dependsOn integrationTest</code></pre>
+        
+        <h2>Packaging và Deployment</h2>
+        
+        <h3>1. Maven Packaging</h3>
+        <pre><code>&lt;build&gt;
+    &lt;plugins&gt;
+        &lt;!-- Spring Boot packaging --&gt;
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;
+            &lt;version&gt;3.0.0&lt;/version&gt;
+            &lt;executions&gt;
+                &lt;execution&gt;
+                    &lt;goals&gt;
+                        &lt;goal&gt;repackage&lt;/goal&gt;
+                    &lt;/goals&gt;
+                &lt;/execution&gt;
+            &lt;/executions&gt;
+        &lt;/plugin&gt;
+        
+        &lt;!-- Docker packaging --&gt;
+        &lt;plugin&gt;
+            &lt;groupId&gt;com.spotify&lt;/groupId&gt;
+            &lt;artifactId&gt;dockerfile-maven-plugin&lt;/artifactId&gt;
+            &lt;version&gt;1.4.13&lt;/version&gt;
+            &lt;configuration&gt;
+                &lt;repository&gt;network-management&lt;/repository&gt;
+                &lt;tag&gt;${project.version}&lt;/tag&gt;
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+        
+        &lt;!-- Assembly plugin for custom packaging --&gt;
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-assembly-plugin&lt;/artifactId&gt;
+            &lt;version&gt;3.6.0&lt;/version&gt;
+            &lt;configuration&gt;
+                &lt;descriptorRefs&gt;
+                    &lt;descriptorRef&gt;jar-with-dependencies&lt;/descriptorRef&gt;
+                &lt;/descriptorRefs&gt;
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+    &lt;/plugins&gt;
+&lt;/build&gt;</code></pre>
+        
+        <h3>2. Gradle Packaging</h3>
+        <pre><code>plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.0.0'
+    id 'com.palantir.docker' version '0.34.0'
+}
+
+// Spring Boot packaging
+bootJar {
+    archiveFileName = "${project.name}-${project.version}.jar"
+    mainClass = 'com.example.NetworkManagementApplication'
+}
+
+// Custom packaging
+task customJar(type: Jar) {
+    from sourceSets.main.output
+    from configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    archiveFileName = "${project.name}-custom-${project.version}.jar"
+}
+
+// Docker packaging
+docker {
+    name "${project.name}:${project.version}"
+    files bootJar.archiveFile
+    buildArgs(['JAR_FILE': bootJar.archiveFileName.get()])
+}
+
+// Distribution
+distributions {
+    main {
+        contents {
+            from bootJar
+            from 'src/main/resources/application.yml'
+            from 'scripts/start.sh'
+        }
+    }
+}</code></pre>
+        
+        <h2>Performance Optimization</h2>
+        
+        <h3>1. Maven Performance</h3>
+        <pre><code>&lt;!-- Parallel builds --&gt;
+&lt;properties&gt;
+    &lt;maven.compiler.fork&gt;true&lt;/maven.compiler.fork&gt;
+    &lt;maven.compiler.maxmem&gt;1024m&lt;/maven.compiler.maxmem&gt;
+&lt;/properties&gt;
+
+&lt;build&gt;
+    &lt;plugins&gt;
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+            &lt;version&gt;3.11.0&lt;/version&gt;
+            &lt;configuration&gt;
+                &lt;fork&gt;true&lt;/fork&gt;
+                &lt;meminitial&gt;128m&lt;/meminitial&gt;
+                &lt;maxmem&gt;512m&lt;/maxmem&gt;
+                &lt;compilerArgs&gt;
+                    &lt;arg&gt;-Xlint:unchecked&lt;/arg&gt;
+                    &lt;arg&gt;-Xlint:deprecation&lt;/arg&gt;
+                &lt;/compilerArgs&gt;
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+    &lt;/plugins&gt;
+&lt;/build&gt;
+
+# Run with parallel threads
+mvn clean install -T 4
+
+# Skip tests for faster build
+mvn clean install -DskipTests
+
+# Use Maven daemon
+mvn clean install -Dmaven.compiler.fork=true</code></pre>
+        
+        <h3>2. Gradle Performance</h3>
+        <pre><code>// gradle.properties
+org.gradle.parallel=true
+org.gradle.caching=true
+org.gradle.daemon=true
+org.gradle.configureondemand=true
+
+// JVM settings
+org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
+
+// build.gradle
+tasks.withType(JavaCompile) {
+    options.compilerArgs += ['-Xlint:unchecked', '-Xlint:deprecation']
+    options.fork = true
+    options.forkOptions.memoryMaximumSize = '1g'
+}
+
+// Parallel test execution
+test {
+    maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+}
+
+// Build cache
+buildCache {
+    local {
+        enabled = true
+    }
+}
+
+# Run with parallel builds
+./gradlew build --parallel
+
+# Use build cache
+./gradlew build --build-cache
+
+# Profile build performance
+./gradlew build --profile</code></pre>
+        
+        <h2>CI/CD Integration</h2>
+        
+        <h3>1. GitHub Actions với Maven</h3>
+        <pre><code># .github/workflows/maven.yml
+name: Maven CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+    
+    - name: Run tests
+      run: mvn clean test
+    
+    - name: Build application
+      run: mvn clean package -DskipTests
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results
+        path: target/surefire-reports/</code></pre>
+        
+        <h3>2. GitHub Actions với Gradle</h3>
+        <pre><code># .github/workflows/gradle.yml
+name: Gradle CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+    
+    - name: Make gradlew executable
+      run: chmod +x ./gradlew
+    
+    - name: Run tests
+      run: ./gradlew test
+    
+    - name: Build application
+      run: ./gradlew build -x test
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results
+        path: build/test-results/</code></pre>
+        
+        <h2>Best Practices</h2>
+        
+        <h3>1. Maven Best Practices</h3>
+        <pre><code>&lt;!-- Use BOM for dependency management --&gt;
+&lt;dependencyManagement&gt;
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-framework-bom&lt;/artifactId&gt;
+            &lt;version&gt;6.0.0&lt;/version&gt;
+            &lt;type&gt;pom&lt;/type&gt;
+            &lt;scope&gt;import&lt;/scope&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+&lt;/dependencyManagement&gt;
+
+&lt;!-- Use properties for versions --&gt;
+&lt;properties&gt;
+    &lt;spring.version&gt;6.0.0&lt;/spring.version&gt;
+    &lt;junit.version&gt;5.9.2&lt;/junit.version&gt;
+&lt;/properties&gt;
+
+&lt;!-- Exclude transitive dependencies when needed --&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-context&lt;/artifactId&gt;
+    &lt;exclusions&gt;
+        &lt;exclusion&gt;
+            &lt;groupId&gt;commons-logging&lt;/groupId&gt;
+            &lt;artifactId&gt;commons-logging&lt;/artifactId&gt;
+        &lt;/exclusion&gt;
+    &lt;/exclusions&gt;
+&lt;/dependency&gt;</code></pre>
+        
+        <h3>2. Gradle Best Practices</h3>
+        <pre><code>// Use version catalogs
+// gradle/libs.versions.toml
+[versions]
+spring = "6.0.0"
+junit = "5.9.2"
+
+[libraries]
+spring-context = { group = "org.springframework", name = "spring-context", version.ref = "spring" }
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }
+
+// build.gradle
+dependencies {
+    implementation libs.spring.context
+    testImplementation libs.junit.jupiter
+}
+
+// Use configurations for dependency groups
+configurations {
+    springImplementation {
+        extendsFrom implementation
+    }
+}
+
+dependencies {
+    springImplementation 'org.springframework:spring-context:6.0.0'
+    springImplementation 'org.springframework:spring-web:6.0.0'
+}
+
+// Use build scans for debugging
+plugins {
+    id 'com.gradle.build-scan' version '3.11.1'
+}
+
+buildScan {
+    termsOfServiceUrl = 'https://gradle.com/terms-of-service'
+    termsOfServiceAgree = 'yes'
+}</code></pre>
+        
+        <h2>Migration từ Maven sang Gradle</h2>
+        
+        <h3>1. Migration Steps</h3>
+        <pre><code># 1. Generate Gradle wrapper
+gradle wrapper
+
+# 2. Convert dependencies
+# Maven
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-context&lt;/artifactId&gt;
+    &lt;version&gt;6.0.0&lt;/version&gt;
+&lt;/dependency&gt;
+
+# Gradle
+implementation 'org.springframework:spring-context:6.0.0'
+
+# 3. Convert plugins
+# Maven
+&lt;plugin&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+    &lt;version&gt;3.11.0&lt;/version&gt;
+&lt;/plugin&gt;
+
+# Gradle
+plugins {
+    id 'java'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}</code></pre>
+        
+        <h2>Kết luận</h2>
+        <p>
+          Cả Maven và Gradle đều là những build tool mạnh mẽ với những ưu điểm riêng:
+        </p>
+        <ul class="list">
+          <li><strong>Maven</strong>: Phù hợp cho dự án enterprise, team lớn, cần standardization</li>
+          <li><strong>Gradle</strong>: Phù hợp cho dự án phức tạp, cần performance cao, multi-language</li>
+        </ul>
+        <p>
+          Việc lựa chọn build tool phụ thuộc vào:
+        </p>
+        <ul class="list">
+          <li>Quy mô và độ phức tạp của dự án</li>
+          <li>Kinh nghiệm của team</li>
+          <li>Yêu cầu về performance</li>
+          <li>Ecosystem và tooling hỗ trợ</li>
+        </ul>
+        <p>
+          Dù chọn tool nào, hãy tuân thủ best practices để đảm bảo build process ổn định và hiệu quả.
+        </p>
+    </main>
+  </body>
+  </html>
+
+

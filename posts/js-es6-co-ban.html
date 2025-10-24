@@ -1,0 +1,1033 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JavaScript ES6: let/const, arrow function, module</title>
+    <meta name="description" content="Những tính năng ES6 cần nắm khi viết JS hiện đại.">
+    <link rel="stylesheet" href="../css/styles.css">
+  </head>
+  <body>
+    <main class="container post">
+      <a class="back" href="../blog.html">← Quay lại Blog</a>
+      <h1>JavaScript ES6: let/const, arrow function, module</h1>
+      <div class="meta">Chủ đề: <span class="tag tag-js">JavaScript</span></div>
+      <article class="card">
+        <h2>Giới thiệu về ES6 (ES2015)</h2>
+        <p>
+          ES6 (ECMAScript 2015) là một bản cập nhật lớn của JavaScript, mang đến nhiều tính năng mới 
+          giúp viết code hiện đại, dễ đọc và bảo trì hơn. ES6 đã trở thành tiêu chuẩn cho JavaScript hiện đại.
+        </p>
+        
+        <h2>Block Scoping với let và const</h2>
+        
+        <h3>1. let - Block Scoped Variable</h3>
+        <pre><code>// ES5 - Function scoped
+function exampleVar() {
+    if (true) {
+        var x = 1;
+    }
+    console.log(x); // 1 - accessible outside block
+}
+
+// ES6 - Block scoped
+function exampleLet() {
+    if (true) {
+        let y = 1;
+        const z = 2;
+    }
+    console.log(y); // ReferenceError: y is not defined
+    console.log(z); // ReferenceError: z is not defined
+}
+
+// Temporal Dead Zone
+console.log(temporal); // ReferenceError
+let temporal = "I'm in TDZ";
+
+// Loop with let
+for (let i = 0; i < 3; i++) {
+    setTimeout(() => console.log(i), 100); // 0, 1, 2
+}
+
+// vs var
+for (var j = 0; j < 3; j++) {
+    setTimeout(() => console.log(j), 100); // 3, 3, 3
+}</code></pre>
+        
+        <h3>2. const - Immutable Binding</h3>
+        <pre><code>// const creates immutable binding, not immutable value
+const person = {
+    name: 'John',
+    age: 30
+};
+
+person.age = 31; // OK - object is mutable
+person.name = 'Jane'; // OK
+
+// person = {}; // TypeError: Assignment to constant variable
+
+// For truly immutable objects, use Object.freeze()
+const immutablePerson = Object.freeze({
+    name: 'John',
+    age: 30
+});
+
+immutablePerson.age = 31; // Silent failure in non-strict mode
+console.log(immutablePerson.age); // Still 30
+
+// Arrays with const
+const numbers = [1, 2, 3];
+numbers.push(4); // OK
+numbers[0] = 10; // OK
+// numbers = [5, 6, 7]; // TypeError
+
+// Best practice: Use const by default, let when reassignment needed
+const API_URL = 'https://api.example.com';
+const MAX_RETRIES = 3;
+let currentRetry = 0;</code></pre>
+        
+        <h2>Arrow Functions</h2>
+        
+        <h3>1. Syntax và Usage</h3>
+        <pre><code>// Traditional function
+function add(a, b) {
+    return a + b;
+}
+
+// Arrow function - basic syntax
+const addArrow = (a, b) => a + b;
+
+// Arrow function with block body
+const addArrowBlock = (a, b) => {
+    const result = a + b;
+    return result;
+};
+
+// Single parameter - parentheses optional
+const square = x => x * x;
+const squareWithParens = (x) => x * x;
+
+// No parameters
+const greet = () => 'Hello World';
+
+// Returning object literal
+const createUser = (name, age) => ({ name, age });
+
+// Higher-order functions
+const numbers = [1, 2, 3, 4, 5];
+const doubled = numbers.map(n => n * 2);
+const evens = numbers.filter(n => n % 2 === 0);
+const sum = numbers.reduce((acc, n) => acc + n, 0);
+
+console.log(doubled); // [2, 4, 6, 8, 10]
+console.log(evens); // [2, 4]
+console.log(sum); // 15</code></pre>
+        
+        <h3>2. this Binding</h3>
+        <pre><code>// Traditional function - this depends on how it's called
+const obj = {
+    name: 'Object',
+    traditionalMethod: function() {
+        console.log(this.name); // 'Object'
+        
+        // Inner function loses this context
+        function innerFunction() {
+            console.log(this.name); // undefined (in strict mode)
+        }
+        innerFunction();
+        
+        // Arrow function preserves this from outer scope
+        const arrowInner = () => {
+            console.log(this.name); // 'Object'
+        };
+        arrowInner();
+    },
+    
+    // Arrow function method - this is bound to global scope
+    arrowMethod: () => {
+        console.log(this.name); // undefined (in strict mode)
+    }
+};
+
+obj.traditionalMethod();
+obj.arrowMethod();
+
+// Event handlers
+class Button {
+    constructor(element) {
+        this.element = element;
+        this.clickCount = 0;
+        
+        // Traditional function - this is the button element
+        this.element.addEventListener('click', function() {
+            console.log(this); // DOM element
+            // this.clickCount++; // Error - clickCount not on DOM element
+        });
+        
+        // Arrow function - this is the Button instance
+        this.element.addEventListener('click', () => {
+            console.log(this); // Button instance
+            this.clickCount++;
+            console.log(`Clicked ${this.clickCount} times`);
+        });
+    }
+}</code></pre>
+        
+        <h2>Template Literals</h2>
+        
+        <h3>1. Basic Template Literals</h3>
+        <pre><code>// ES5 - String concatenation
+const name = 'John';
+const age = 30;
+const message = 'Hello, my name is ' + name + ' and I am ' + age + ' years old';
+
+// ES6 - Template literals
+const messageTemplate = `Hello, my name is ${name} and I am ${age} years old`;
+
+// Multi-line strings
+const multiLine = `
+    This is a multi-line
+    string in JavaScript
+    without concatenation
+`;
+
+// Expression evaluation
+const a = 10;
+const b = 20;
+const calculation = `The sum of ${a} and ${b} is ${a + b}`;
+
+// Function calls in templates
+const formatDate = (date) => date.toLocaleDateString();
+const currentDate = new Date();
+const dateMessage = `Today is ${formatDate(currentDate)}`;
+
+// Conditional expressions
+const user = { name: 'John', isAdmin: false };
+const adminMessage = `Welcome ${user.isAdmin ? 'Admin' : 'User'} ${user.name}`;</code></pre>
+        
+        <h3>2. Tagged Template Literals</h3>
+        <pre><code>// Custom tag function
+function highlight(strings, ...values) {
+    return strings.reduce((result, string, i) => {
+        const value = values[i] ? `<mark>${values[i]}</mark>` : '';
+        return result + string + value;
+    }, '');
+}
+
+const name = 'John';
+const age = 30;
+const highlighted = highlight`Hello ${name}, you are ${age} years old`;
+console.log(highlighted); // "Hello <mark>John</mark>, you are <mark>30</mark> years old"
+
+// SQL query builder
+function sql(strings, ...values) {
+    return {
+        query: strings.join('?'),
+        params: values
+    };
+}
+
+const userId = 123;
+const status = 'active';
+const query = sql`SELECT * FROM users WHERE id = ${userId} AND status = ${status}`;
+console.log(query); // { query: "SELECT * FROM users WHERE id = ? AND status = ?", params: [123, "active"] }
+
+// CSS-in-JS example
+function css(strings, ...values) {
+    return strings.reduce((result, string, i) => {
+        const value = values[i] || '';
+        return result + string + value;
+    }, '');
+}
+
+const color = 'red';
+const size = '16px';
+const styles = css`
+    color: ${color};
+    font-size: ${size};
+    background: white;
+`;</code></pre>
+        
+        <h2>Destructuring Assignment</h2>
+        
+        <h3>1. Array Destructuring</h3>
+        <pre><code>// Basic array destructuring
+const numbers = [1, 2, 3, 4, 5];
+const [first, second, third] = numbers;
+console.log(first, second, third); // 1, 2, 3
+
+// Skip elements
+const [a, , c] = numbers;
+console.log(a, c); // 1, 3
+
+// Rest operator
+const [head, ...tail] = numbers;
+console.log(head); // 1
+console.log(tail); // [2, 3, 4, 5]
+
+// Default values
+const [x = 0, y = 0, z = 0] = [1, 2];
+console.log(x, y, z); // 1, 2, 0
+
+// Swapping variables
+let a = 1, b = 2;
+[a, b] = [b, a];
+console.log(a, b); // 2, 1
+
+// Function return values
+function getCoordinates() {
+    return [10, 20];
+}
+const [x, y] = getCoordinates();
+
+// Nested arrays
+const nested = [1, [2, 3], 4];
+const [first, [second, third], fourth] = nested;
+console.log(first, second, third, fourth); // 1, 2, 3, 4</code></pre>
+        
+        <h3>2. Object Destructuring</h3>
+        <pre><code>// Basic object destructuring
+const person = {
+    name: 'John',
+    age: 30,
+    city: 'New York',
+    country: 'USA'
+};
+
+const { name, age, city } = person;
+console.log(name, age, city); // John 30 New York
+
+// Rename variables
+const { name: fullName, age: years } = person;
+console.log(fullName, years); // John 30
+
+// Default values
+const { name, age, occupation = 'Developer' } = person;
+console.log(occupation); // Developer
+
+// Nested objects
+const user = {
+    id: 1,
+    profile: {
+        firstName: 'John',
+        lastName: 'Doe',
+        address: {
+            street: '123 Main St',
+            city: 'New York'
+        }
+    }
+};
+
+const {
+    profile: {
+        firstName,
+        lastName,
+        address: { street, city }
+    }
+} = user;
+
+console.log(firstName, lastName, street, city); // John Doe 123 Main St New York
+
+// Function parameters
+function greetUser({ name, age = 0 }) {
+    return `Hello ${name}, you are ${age} years old`;
+}
+
+console.log(greetUser({ name: 'John' })); // Hello John, you are 0 years old
+
+// Rest in object destructuring
+const { name, ...otherProps } = person;
+console.log(otherProps); // { age: 30, city: 'New York', country: 'USA' }</code></pre>
+        
+        <h2>Spread và Rest Operators</h2>
+        
+        <h3>1. Spread Operator (...)</h3>
+        <pre><code>// Array spreading
+const arr1 = [1, 2, 3];
+const arr2 = [4, 5, 6];
+const combined = [...arr1, ...arr2];
+console.log(combined); // [1, 2, 3, 4, 5, 6]
+
+// Copy arrays
+const original = [1, 2, 3];
+const copy = [...original];
+copy.push(4);
+console.log(original); // [1, 2, 3]
+console.log(copy); // [1, 2, 3, 4]
+
+// Function arguments
+function sum(a, b, c) {
+    return a + b + c;
+}
+const numbers = [1, 2, 3];
+console.log(sum(...numbers)); // 6
+
+// Math functions
+const numbers = [1, 5, 3, 9, 2];
+console.log(Math.max(...numbers)); // 9
+console.log(Math.min(...numbers)); // 1
+
+// Object spreading
+const obj1 = { a: 1, b: 2 };
+const obj2 = { c: 3, d: 4 };
+const merged = { ...obj1, ...obj2 };
+console.log(merged); // { a: 1, b: 2, c: 3, d: 4 }
+
+// Object property override
+const defaultConfig = { host: 'localhost', port: 3000, debug: false };
+const userConfig = { port: 8080, debug: true };
+const finalConfig = { ...defaultConfig, ...userConfig };
+console.log(finalConfig); // { host: 'localhost', port: 8080, debug: true }
+
+// Clone objects
+const original = { name: 'John', age: 30 };
+const clone = { ...original };
+clone.age = 31;
+console.log(original.age); // 30
+console.log(clone.age); // 31</code></pre>
+        
+        <h3>2. Rest Operator (...)</h3>
+        <pre><code>// Rest in function parameters
+function sum(...numbers) {
+    return numbers.reduce((total, num) => total + num, 0);
+}
+
+console.log(sum(1, 2, 3, 4, 5)); // 15
+
+// Rest with other parameters
+function greet(greeting, ...names) {
+    return `${greeting} ${names.join(', ')}`;
+}
+
+console.log(greet('Hello', 'John', 'Jane', 'Bob')); // Hello John, Jane, Bob
+
+// Rest in destructuring
+const [first, second, ...rest] = [1, 2, 3, 4, 5];
+console.log(first, second); // 1, 2
+console.log(rest); // [3, 4, 5]
+
+// Rest in object destructuring
+const { name, age, ...otherProps } = {
+    name: 'John',
+    age: 30,
+    city: 'New York',
+    country: 'USA'
+};
+console.log(otherProps); // { city: 'New York', country: 'USA' }
+
+// Collecting remaining arguments
+function createUser(name, age, ...hobbies) {
+    return {
+        name,
+        age,
+        hobbies: hobbies.length > 0 ? hobbies : ['No hobbies']
+    };
+}
+
+const user = createUser('John', 30, 'reading', 'swimming', 'coding');
+console.log(user); // { name: 'John', age: 30, hobbies: ['reading', 'swimming', 'coding'] }</code></pre>
+        
+        <h2>Enhanced Object Literals</h2>
+        
+        <h3>1. Property Shorthand</h3>
+        <pre><code>// ES5
+const name = 'John';
+const age = 30;
+const person = {
+    name: name,
+    age: age,
+    greet: function() {
+        return `Hello, I'm ${this.name}`;
+    }
+};
+
+// ES6 - Property shorthand
+const personES6 = {
+    name,
+    age,
+    greet() {
+        return `Hello, I'm ${this.name}`;
+    }
+};
+
+// Computed property names
+const propName = 'dynamic';
+const obj = {
+    [propName]: 'value',
+    [`${propName}Key`]: 'another value',
+    ['computed' + 'Name']: 'computed value'
+};
+
+console.log(obj); // { dynamic: 'value', dynamicKey: 'another value', computedName: 'computed value' }
+
+// Method shorthand
+const calculator = {
+    add(a, b) {
+        return a + b;
+    },
+    subtract(a, b) {
+        return a - b;
+    },
+    multiply(a, b) {
+        return a * b;
+    }
+};
+
+// Dynamic method names
+const methodName = 'calculate';
+const mathUtils = {
+    [methodName](operation, a, b) {
+        switch (operation) {
+            case 'add': return a + b;
+            case 'subtract': return a - b;
+            case 'multiply': return a * b;
+            default: return 0;
+        }
+    }
+};</code></pre>
+        
+        <h2>Modules</h2>
+        
+        <h3>1. Export và Import</h3>
+        <pre><code>// math.js - Named exports
+export const PI = 3.14159;
+export const E = 2.71828;
+
+export function add(a, b) {
+    return a + b;
+}
+
+export function multiply(a, b) {
+    return a * b;
+}
+
+export function divide(a, b) {
+    if (b === 0) {
+        throw new Error('Division by zero');
+    }
+    return a / b;
+}
+
+// Alternative export syntax
+const subtract = (a, b) => a - b;
+const power = (base, exponent) => Math.pow(base, exponent);
+
+export { subtract, power };
+
+// utils.js - Default export
+export default function formatCurrency(amount, currency = 'USD') {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currency
+    }).format(amount);
+}
+
+// Alternative default export
+const formatDate = (date) => date.toLocaleDateString();
+export default formatDate;
+
+// constants.js - Mixed exports
+export const API_URL = 'https://api.example.com';
+export const TIMEOUT = 5000;
+
+const DEFAULT_CONFIG = {
+    retries: 3,
+    timeout: TIMEOUT
+};
+
+export default DEFAULT_CONFIG;</code></pre>
+        
+        <h3>2. Import Syntax</h3>
+        <pre><code>// Import named exports
+import { add, multiply, PI } from './math.js';
+
+// Import with aliases
+import { add as sum, multiply as product } from './math.js';
+
+// Import all named exports
+import * as MathUtils from './math.js';
+console.log(MathUtils.add(1, 2)); // 3
+console.log(MathUtils.PI); // 3.14159
+
+// Import default export
+import formatCurrency from './utils.js';
+console.log(formatCurrency(100)); // $100.00
+
+// Import with alias
+import formatCurrency as formatMoney from './utils.js';
+
+// Mixed imports
+import formatCurrency, { API_URL, TIMEOUT } from './constants.js';
+
+// Re-export
+// index.js
+export { add, multiply } from './math.js';
+export { formatCurrency } from './utils.js';
+export { API_URL } from './constants.js';
+
+// Dynamic imports
+async function loadModule() {
+    const { add, multiply } = await import('./math.js');
+    console.log(add(1, 2)); // 3
+}
+
+// Conditional imports
+if (condition) {
+    const { specialFunction } = await import('./special.js');
+    specialFunction();
+}</code></pre>
+        
+        <h2>Classes</h2>
+        
+        <h3>1. Basic Class Syntax</h3>
+        <pre><code>// ES5 - Constructor function
+function Person(name, age) {
+    this.name = name;
+    this.age = age;
+}
+
+Person.prototype.greet = function() {
+    return `Hello, I'm ${this.name}`;
+};
+
+// ES6 - Class syntax
+class Person {
+    constructor(name, age) {
+        this.name = name;
+        this.age = age;
+    }
+    
+    greet() {
+        return `Hello, I'm ${this.name}`;
+    }
+    
+    // Getter
+    get info() {
+        return `${this.name} is ${this.age} years old`;
+    }
+    
+    // Setter
+    set age(value) {
+        if (value < 0) {
+            throw new Error('Age cannot be negative');
+        }
+        this._age = value;
+    }
+    
+    get age() {
+        return this._age;
+    }
+    
+    // Static method
+    static createAdult(name) {
+        return new Person(name, 18);
+    }
+}
+
+const person = new Person('John', 30);
+console.log(person.greet()); // Hello, I'm John
+console.log(person.info); // John is 30 years old
+console.log(Person.createAdult('Jane')); // Person { name: 'Jane', age: 18 }</code></pre>
+        
+        <h3>2. Inheritance</h3>
+        <pre><code>// Base class
+class Animal {
+    constructor(name, species) {
+        this.name = name;
+        this.species = species;
+    }
+    
+    speak() {
+        return `${this.name} makes a sound`;
+    }
+    
+    getInfo() {
+        return `${this.name} is a ${this.species}`;
+    }
+}
+
+// Derived class
+class Dog extends Animal {
+    constructor(name, breed) {
+        super(name, 'dog');
+        this.breed = breed;
+    }
+    
+    speak() {
+        return `${this.name} barks`;
+    }
+    
+    getInfo() {
+        return `${super.getInfo()} of breed ${this.breed}`;
+    }
+}
+
+// Another derived class
+class Cat extends Animal {
+    constructor(name, color) {
+        super(name, 'cat');
+        this.color = color;
+    }
+    
+    speak() {
+        return `${this.name} meows`;
+    }
+    
+    purr() {
+        return `${this.name} purrs softly`;
+    }
+}
+
+const dog = new Dog('Buddy', 'Golden Retriever');
+const cat = new Cat('Whiskers', 'Orange');
+
+console.log(dog.speak()); // Buddy barks
+console.log(cat.speak()); // Whiskers meows
+console.log(dog.getInfo()); // Buddy is a dog of breed Golden Retriever
+console.log(cat.purr()); // Whiskers purrs softly</code></pre>
+        
+        <h2>Promises</h2>
+        
+        <h3>1. Basic Promise Usage</h3>
+        <pre><code>// Creating a Promise
+const fetchUserData = (userId) => {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            if (userId > 0) {
+                resolve({
+                    id: userId,
+                    name: 'John Doe',
+                    email: 'john@example.com'
+                });
+            } else {
+                reject(new Error('Invalid user ID'));
+            }
+        }, 1000);
+    });
+};
+
+// Using Promise
+fetchUserData(1)
+    .then(user => {
+        console.log('User data:', user);
+        return user.name;
+    })
+    .then(name => {
+        console.log('User name:', name);
+    })
+    .catch(error => {
+        console.error('Error:', error.message);
+    });
+
+// Promise.all - Wait for all promises
+const promise1 = Promise.resolve(1);
+const promise2 = Promise.resolve(2);
+const promise3 = Promise.resolve(3);
+
+Promise.all([promise1, promise2, promise3])
+    .then(values => {
+        console.log(values); // [1, 2, 3]
+    });
+
+// Promise.race - First to complete
+const fastPromise = new Promise(resolve => setTimeout(() => resolve('Fast'), 100));
+const slowPromise = new Promise(resolve => setTimeout(() => resolve('Slow'), 500));
+
+Promise.race([fastPromise, slowPromise])
+    .then(result => {
+        console.log(result); // 'Fast'
+    });</code></pre>
+        
+        <h2>Map và Set</h2>
+        
+        <h3>1. Map</h3>
+        <pre><code>// Creating a Map
+const userMap = new Map();
+
+// Adding entries
+userMap.set('john', { name: 'John', age: 30 });
+userMap.set('jane', { name: 'Jane', age: 25 });
+
+// Getting values
+console.log(userMap.get('john')); // { name: 'John', age: 30 }
+
+// Checking if key exists
+console.log(userMap.has('john')); // true
+
+// Size
+console.log(userMap.size); // 2
+
+// Deleting entries
+userMap.delete('jane');
+
+// Iterating over Map
+for (const [key, value] of userMap) {
+    console.log(`${key}: ${value.name}`);
+}
+
+// Map with different key types
+const mixedMap = new Map();
+mixedMap.set(1, 'number key');
+mixedMap.set('1', 'string key');
+mixedMap.set(true, 'boolean key');
+mixedMap.set({}, 'object key');
+
+console.log(mixedMap.get(1)); // 'number key'
+console.log(mixedMap.get('1')); // 'string key'
+
+// Converting to/from arrays
+const entries = [['a', 1], ['b', 2], ['c', 3]];
+const mapFromArray = new Map(entries);
+const arrayFromMap = Array.from(mapFromMap);</code></pre>
+        
+        <h3>2. Set</h3>
+        <pre><code>// Creating a Set
+const numberSet = new Set([1, 2, 3, 4, 5]);
+
+// Adding values
+numberSet.add(6);
+numberSet.add(1); // Duplicate, won't be added
+
+// Checking if value exists
+console.log(numberSet.has(3)); // true
+
+// Size
+console.log(numberSet.size); // 6
+
+// Deleting values
+numberSet.delete(6);
+
+// Iterating over Set
+for (const value of numberSet) {
+    console.log(value);
+}
+
+// Set operations
+const set1 = new Set([1, 2, 3, 4]);
+const set2 = new Set([3, 4, 5, 6]);
+
+// Union
+const union = new Set([...set1, ...set2]);
+console.log(union); // Set {1, 2, 3, 4, 5, 6}
+
+// Intersection
+const intersection = new Set([...set1].filter(x => set2.has(x)));
+console.log(intersection); // Set {3, 4}
+
+// Difference
+const difference = new Set([...set1].filter(x => !set2.has(x)));
+console.log(difference); // Set {1, 2}
+
+// Removing duplicates from array
+const numbers = [1, 2, 2, 3, 3, 3, 4, 4, 5];
+const uniqueNumbers = [...new Set(numbers)];
+console.log(uniqueNumbers); // [1, 2, 3, 4, 5]</code></pre>
+        
+        <h2>Symbols</h2>
+        
+        <h3>1. Creating và Using Symbols</h3>
+        <pre><code>// Creating symbols
+const sym1 = Symbol();
+const sym2 = Symbol('description');
+const sym3 = Symbol('description');
+
+console.log(sym1); // Symbol()
+console.log(sym2); // Symbol(description)
+console.log(sym2 === sym3); // false - each symbol is unique
+
+// Using symbols as object keys
+const obj = {};
+const symKey = Symbol('key');
+obj[symKey] = 'value';
+obj['regularKey'] = 'regular value';
+
+console.log(obj[symKey]); // 'value'
+console.log(obj.regularKey); // 'regular value'
+
+// Symbols are not enumerable
+for (const key in obj) {
+    console.log(key); // Only 'regularKey'
+}
+
+// Getting symbol properties
+const symbolKeys = Object.getOwnPropertySymbols(obj);
+console.log(symbolKeys); // [Symbol(key)]
+
+// Well-known symbols
+const iterable = {
+    [Symbol.iterator]: function* () {
+        yield 1;
+        yield 2;
+        yield 3;
+    }
+};
+
+for (const value of iterable) {
+    console.log(value); // 1, 2, 3
+}
+
+// Symbol.for() - Global symbol registry
+const globalSym1 = Symbol.for('global');
+const globalSym2 = Symbol.for('global');
+console.log(globalSym1 === globalSym2); // true
+
+// Symbol.keyFor() - Get key from global symbol
+console.log(Symbol.keyFor(globalSym1)); // 'global'</code></pre>
+        
+        <h2>Generators</h2>
+        
+        <h3>1. Basic Generator Functions</h3>
+        <pre><code>// Generator function
+function* numberGenerator() {
+    yield 1;
+    yield 2;
+    yield 3;
+}
+
+const gen = numberGenerator();
+console.log(gen.next()); // { value: 1, done: false }
+console.log(gen.next()); // { value: 2, done: false }
+console.log(gen.next()); // { value: 3, done: false }
+console.log(gen.next()); // { value: undefined, done: true }
+
+// Generator with parameters
+function* fibonacci() {
+    let a = 0, b = 1;
+    while (true) {
+        yield a;
+        [a, b] = [b, a + b];
+    }
+}
+
+const fib = fibonacci();
+console.log(fib.next().value); // 0
+console.log(fib.next().value); // 1
+console.log(fib.next().value); // 1
+console.log(fib.next().value); // 2
+console.log(fib.next().value); // 3
+
+// Generator with return
+function* generatorWithReturn() {
+    yield 1;
+    yield 2;
+    return 'finished';
+    yield 3; // This will never execute
+}
+
+const genWithReturn = generatorWithReturn();
+console.log(genWithReturn.next()); // { value: 1, done: false }
+console.log(genWithReturn.next()); // { value: 2, done: false }
+console.log(genWithReturn.next()); // { value: 'finished', done: true }
+
+// Generator methods
+const generatorObject = {
+    *generatorMethod() {
+        yield 'a';
+        yield 'b';
+    }
+};
+
+for (const value of generatorObject.generatorMethod()) {
+    console.log(value); // 'a', 'b'
+}</code></pre>
+        
+        <h2>Best Practices</h2>
+        
+        <h3>1. Variable Declarations</h3>
+        <pre><code>// ✅ Good - Use const by default
+const API_URL = 'https://api.example.com';
+const MAX_RETRIES = 3;
+
+// ✅ Good - Use let when reassignment needed
+let currentRetry = 0;
+let isLoading = false;
+
+// ❌ Bad - Don't use var
+var oldStyle = 'avoid this';
+
+// ✅ Good - Block scoping
+if (condition) {
+    const temp = 'temporary value';
+    // temp is only available in this block
+}
+
+// ❌ Bad - Function scoping
+if (condition) {
+    var temp = 'leaks to outer scope';
+}</code></pre>
+        
+        <h3>2. Arrow Functions</h3>
+        <pre><code>// ✅ Good - Arrow functions for callbacks
+const numbers = [1, 2, 3, 4, 5];
+const doubled = numbers.map(n => n * 2);
+
+// ✅ Good - Arrow functions preserve this
+class Component {
+    constructor() {
+        this.value = 0;
+    }
+    
+    setupEventListeners() {
+        document.addEventListener('click', () => {
+            this.value++; // this refers to Component instance
+        });
+    }
+}
+
+// ❌ Bad - Don't use arrow functions for methods
+const obj = {
+    value: 0,
+    increment: () => {
+        this.value++; // this is not obj
+    }
+};
+
+// ✅ Good - Use regular functions for methods
+const objGood = {
+    value: 0,
+    increment() {
+        this.value++; // this refers to objGood
+    }
+};</code></pre>
+        
+        <h3>3. Destructuring</h3>
+        <pre><code>// ✅ Good - Destructure function parameters
+function processUser({ name, age, email }) {
+    console.log(`Processing ${name}, age ${age}`);
+}
+
+// ✅ Good - Destructure arrays
+const [first, second, ...rest] = someArray;
+
+// ✅ Good - Destructure with defaults
+function createUser({ name = 'Anonymous', age = 0, email = '' } = {}) {
+    return { name, age, email };
+}
+
+// ✅ Good - Destructure in loops
+for (const { name, value } of items) {
+    console.log(`${name}: ${value}`);
+}</code></pre>
+        
+        <h2>Kết luận</h2>
+        <p>
+          ES6 đã cách mạng hóa cách chúng ta viết JavaScript với:
+        </p>
+        <ul class="list">
+          <li><strong>Block scoping</strong> với let/const giúp code an toàn hơn</li>
+          <li><strong>Arrow functions</strong> làm code ngắn gọn và xử lý this tốt hơn</li>
+          <li><strong>Template literals</strong> giúp string manipulation dễ dàng</li>
+          <li><strong>Destructuring</strong> giúp extract data từ objects/arrays</li>
+          <li><strong>Modules</strong> tổ chức code thành các file riêng biệt</li>
+          <li><strong>Classes</strong> cung cấp syntax OOP quen thuộc</li>
+          <li><strong>Promises</strong> xử lý async operations tốt hơn</li>
+          <li><strong>Map/Set</strong> cung cấp data structures mạnh mẽ</li>
+        </ul>
+        <p>
+          Việc nắm vững ES6 giúp bạn viết JavaScript hiện đại, dễ đọc và bảo trì hơn.
+        </p>
+    </main>
+  </body>
+  </html>
+
+

@@ -1,0 +1,906 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Java JDBC: kết nối cơ sở dữ liệu</title>
+    <meta name="description" content="Các bước kết nối DB với JDBC và try-with-resources.">
+    <link rel="stylesheet" href="../css/styles.css">
+  </head>
+  <body>
+    <main class="container post">
+      <a class="back" href="../blog.html">← Quay lại Blog</a>
+      <h1>Java JDBC: kết nối cơ sở dữ liệu</h1>
+      <div class="meta">Chủ đề: <span class="tag tag-java">Java</span></div>
+      <article class="card">
+        <h2>Giới thiệu về JDBC</h2>
+        <p>
+          JDBC (Java Database Connectivity) là API chuẩn của Java để kết nối và thao tác với cơ sở dữ liệu quan hệ. 
+          JDBC cung cấp một cách thống nhất để truy cập các loại database khác nhau thông qua drivers.
+        </p>
+        
+        <h2>JDBC Architecture</h2>
+        <pre><code>Application
+    ↓
+JDBC API
+    ↓
+JDBC Driver Manager
+    ↓
+JDBC Driver (Database Specific)
+    ↓
+Database</code></pre>
+        
+        <h2>Kết nối Database</h2>
+        
+        <h3>1. Basic Connection</h3>
+        <pre><code>import java.sql.*;
+
+public class BasicConnection {
+    private static final String URL = "jdbc:mysql://localhost:3306/networkdb";
+    private static final String USERNAME = "root";
+    private static final String PASSWORD = "password";
+    
+    public static void main(String[] args) {
+        Connection connection = null;
+        try {
+            // Load driver (optional in modern JDBC)
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            
+            // Create connection
+            connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            
+            if (connection != null) {
+                System.out.println("Kết nối database thành công!");
+                
+                // Get database metadata
+                DatabaseMetaData metaData = connection.getMetaData();
+                System.out.println("Database: " + metaData.getDatabaseProductName());
+                System.out.println("Version: " + metaData.getDatabaseProductVersion());
+            }
+            
+        } catch (ClassNotFoundException e) {
+            System.err.println("Driver không tìm thấy: " + e.getMessage());
+        } catch (SQLException e) {
+            System.err.println("Lỗi kết nối database: " + e.getMessage());
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    System.err.println("Lỗi đóng kết nối: " + e.getMessage());
+                }
+            }
+        }
+    }
+}</code></pre>
+        
+        <h3>2. Try-With-Resources</h3>
+        <pre><code>public class TryWithResourcesExample {
+    public static void main(String[] args) {
+        String url = "jdbc:mysql://localhost:3306/networkdb";
+        String username = "root";
+        String password = "password";
+        
+        try (Connection conn = DriverManager.getConnection(url, username, password)) {
+            System.out.println("Kết nối thành công!");
+            
+            // Test connection
+            if (conn.isValid(5)) {
+                System.out.println("Connection is valid");
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("Lỗi: " + e.getMessage());
+        }
+        // Connection tự động được đóng
+    }
+}</code></pre>
+        
+        <h2>Connection Pooling</h2>
+        
+        <h3>1. HikariCP Configuration</h3>
+        <pre><code>import com.zaxxer.hikari.*;
+
+public class HikariCPExample {
+    private static HikariDataSource dataSource;
+    
+    static {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:mysql://localhost:3306/networkdb");
+        config.setUsername("root");
+        config.setPassword("password");
+        
+        // Connection pool settings
+        config.setMaximumPoolSize(20);
+        config.setMinimumIdle(5);
+        config.setConnectionTimeout(30000);
+        config.setIdleTimeout(600000);
+        config.setMaxLifetime(1800000);
+        
+        // Connection validation
+        config.setConnectionTestQuery("SELECT 1");
+        config.setValidationTimeout(5000);
+        
+        // Performance settings
+        config.addDataSourceProperty("cachePrepStmts", "true");
+        config.addDataSourceProperty("prepStmtCacheSize", "250");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+        
+        dataSource = new HikariDataSource(config);
+    }
+    
+    public static Connection getConnection() throws SQLException {
+        return dataSource.getConnection();
+    }
+    
+    public static void closeDataSource() {
+        if (dataSource != null) {
+            dataSource.close();
+        }
+    }
+}</code></pre>
+        
+        <h3>2. Apache DBCP2</h3>
+        <pre><code>import org.apache.commons.dbcp2.*;
+
+public class DBCPExample {
+    private static BasicDataSource dataSource;
+    
+    static {
+        dataSource = new BasicDataSource();
+        dataSource.setUrl("jdbc:mysql://localhost:3306/networkdb");
+        dataSource.setUsername("root");
+        dataSource.setPassword("password");
+        
+        // Pool settings
+        dataSource.setInitialSize(5);
+        dataSource.setMaxTotal(20);
+        dataSource.setMaxIdle(10);
+        dataSource.setMinIdle(5);
+        
+        // Connection validation
+        dataSource.setValidationQuery("SELECT 1");
+        dataSource.setTestOnBorrow(true);
+        dataSource.setTestWhileIdle(true);
+        
+        // Timeout settings
+        dataSource.setMaxWaitMillis(30000);
+        dataSource.setTimeBetweenEvictionRunsMillis(60000);
+    }
+    
+    public static Connection getConnection() throws SQLException {
+        return dataSource.getConnection();
+    }
+}</code></pre>
+        
+        <h2>Statement Types</h2>
+        
+        <h3>1. Statement (Basic)</h3>
+        <pre><code>public class StatementExample {
+    public void basicQuery() throws SQLException {
+        String sql = "SELECT * FROM devices WHERE type = 'router'";
+        
+        try (Connection conn = HikariCPExample.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            while (rs.next()) {
+                System.out.println("ID: " + rs.getInt("id"));
+                System.out.println("Name: " + rs.getString("name"));
+                System.out.println("IP: " + rs.getString("ip_address"));
+                System.out.println("---");
+            }
+        }
+    }
+    
+    public void updateExample() throws SQLException {
+        String sql = "UPDATE devices SET status = 'active' WHERE id = 1";
+        
+        try (Connection conn = HikariCPExample.getConnection();
+             Statement stmt = conn.createStatement()) {
+            
+            int rowsAffected = stmt.executeUpdate(sql);
+            System.out.println("Rows updated: " + rowsAffected);
+        }
+    }
+}</code></pre>
+        
+        <h3>2. PreparedStatement (Recommended)</h3>
+        <pre><code>public class PreparedStatementExample {
+    
+    // SELECT with parameters
+    public List<Device> getDevicesByType(String type) throws SQLException {
+        String sql = "SELECT * FROM devices WHERE type = ? AND status = ?";
+        List<Device> devices = new ArrayList<>();
+        
+        try (Connection conn = HikariCPExample.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, type);
+            pstmt.setString(2, "active");
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Device device = new Device();
+                    device.setId(rs.getInt("id"));
+                    device.setName(rs.getString("name"));
+                    device.setType(rs.getString("type"));
+                    device.setIpAddress(rs.getString("ip_address"));
+                    device.setStatus(rs.getString("status"));
+                    devices.add(device);
+                }
+            }
+        }
+        return devices;
+    }
+    
+    // INSERT with parameters
+    public int insertDevice(Device device) throws SQLException {
+        String sql = "INSERT INTO devices (name, type, ip_address, status) VALUES (?, ?, ?, ?)";
+        
+        try (Connection conn = HikariCPExample.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            
+            pstmt.setString(1, device.getName());
+            pstmt.setString(2, device.getType());
+            pstmt.setString(3, device.getIpAddress());
+            pstmt.setString(4, device.getStatus());
+            
+            int rowsAffected = pstmt.executeUpdate();
+            
+            // Get generated key
+            try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    device.setId(generatedKeys.getInt(1));
+                }
+            }
+            
+            return rowsAffected;
+        }
+    }
+    
+    // Batch operations
+    public int[] batchInsert(List<Device> devices) throws SQLException {
+        String sql = "INSERT INTO devices (name, type, ip_address, status) VALUES (?, ?, ?, ?)";
+        
+        try (Connection conn = HikariCPExample.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            for (Device device : devices) {
+                pstmt.setString(1, device.getName());
+                pstmt.setString(2, device.getType());
+                pstmt.setString(3, device.getIpAddress());
+                pstmt.setString(4, device.getStatus());
+                pstmt.addBatch();
+            }
+            
+            return pstmt.executeBatch();
+        }
+    }
+}</code></pre>
+        
+        <h3>3. CallableStatement (Stored Procedures)</h3>
+        <pre><code>public class CallableStatementExample {
+    
+    public void callStoredProcedure() throws SQLException {
+        String sql = "{call GetDeviceStats(?, ?)}";
+        
+        try (Connection conn = HikariCPExample.getConnection();
+             CallableStatement cstmt = conn.prepareCall(sql)) {
+            
+            // Set input parameters
+            cstmt.setString(1, "router");
+            
+            // Register output parameter
+            cstmt.registerOutParameter(2, Types.INTEGER);
+            
+            // Execute procedure
+            cstmt.execute();
+            
+            // Get output parameter
+            int count = cstmt.getInt(2);
+            System.out.println("Router count: " + count);
+        }
+    }
+    
+    public void callFunction() throws SQLException {
+        String sql = "{? = call CalculateDeviceHealth(?)}";
+        
+        try (Connection conn = HikariCPExample.getConnection();
+             CallableStatement cstmt = conn.prepareCall(sql)) {
+            
+            // Register return parameter
+            cstmt.registerOutParameter(1, Types.DECIMAL);
+            
+            // Set input parameter
+            cstmt.setInt(2, 1);
+            
+            // Execute function
+            cstmt.execute();
+            
+            // Get return value
+            BigDecimal health = cstmt.getBigDecimal(1);
+            System.out.println("Device health: " + health);
+        }
+    }
+}</code></pre>
+        
+        <h2>Transaction Management</h2>
+        
+        <h3>1. Basic Transaction</h3>
+        <pre><code>public class TransactionExample {
+    
+    public void transferData(int fromDeviceId, int toDeviceId, String data) throws SQLException {
+        Connection conn = null;
+        try {
+            conn = HikariCPExample.getConnection();
+            conn.setAutoCommit(false); // Start transaction
+            
+            // First operation
+            String sql1 = "UPDATE devices SET data = ? WHERE id = ?";
+            try (PreparedStatement pstmt1 = conn.prepareStatement(sql1)) {
+                pstmt1.setString(1, data);
+                pstmt1.setInt(2, toDeviceId);
+                pstmt1.executeUpdate();
+            }
+            
+            // Second operation
+            String sql2 = "UPDATE devices SET data = NULL WHERE id = ?";
+            try (PreparedStatement pstmt2 = conn.prepareStatement(sql2)) {
+                pstmt2.setInt(1, fromDeviceId);
+                pstmt2.executeUpdate();
+            }
+            
+            // Commit transaction
+            conn.commit();
+            System.out.println("Transaction committed successfully");
+            
+        } catch (SQLException e) {
+            if (conn != null) {
+                conn.rollback();
+                System.err.println("Transaction rolled back: " + e.getMessage());
+            }
+            throw e;
+        } finally {
+            if (conn != null) {
+                conn.setAutoCommit(true);
+                conn.close();
+            }
+        }
+    }
+}</code></pre>
+        
+        <h3>2. Transaction Isolation Levels</h3>
+        <pre><code>public class IsolationLevelExample {
+    
+    public void readCommittedExample() throws SQLException {
+        try (Connection conn = HikariCPExample.getConnection()) {
+            conn.setAutoCommit(false);
+            conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+            
+            // Read data
+            String sql = "SELECT * FROM devices WHERE id = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, 1);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) {
+                        System.out.println("Device: " + rs.getString("name"));
+                    }
+                }
+            }
+            
+            conn.commit();
+        }
+    }
+    
+    public void serializableExample() throws SQLException {
+        try (Connection conn = HikariCPExample.getConnection()) {
+            conn.setAutoCommit(false);
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            
+            // Critical section - highest isolation
+            String sql = "SELECT COUNT(*) FROM devices WHERE status = 'active'";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql);
+                 ResultSet rs = pstmt.executeQuery()) {
+                
+                if (rs.next()) {
+                    int count = rs.getInt(1);
+                    System.out.println("Active devices: " + count);
+                }
+            }
+            
+            conn.commit();
+        }
+    }
+}</code></pre>
+        
+        <h2>ResultSet Handling</h2>
+        
+        <h3>1. Basic ResultSet</h3>
+        <pre><code>public class ResultSetExample {
+    
+    public void basicResultSet() throws SQLException {
+        String sql = "SELECT id, name, type, ip_address, status FROM devices";
+        
+        try (Connection conn = HikariCPExample.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                String type = rs.getString("type");
+                String ipAddress = rs.getString("ip_address");
+                String status = rs.getString("status");
+                
+                System.out.printf("ID: %d, Name: %s, Type: %s, IP: %s, Status: %s%n",
+                    id, name, type, ipAddress, status);
+            }
+        }
+    }
+    
+    public void scrollableResultSet() throws SQLException {
+        String sql = "SELECT * FROM devices ORDER BY name";
+        
+        try (Connection conn = HikariCPExample.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql, 
+                 ResultSet.TYPE_SCROLL_INSENSITIVE, 
+                 ResultSet.CONCUR_READ_ONLY);
+             ResultSet rs = pstmt.executeQuery()) {
+            
+            // Move to last row
+            rs.last();
+            int totalRows = rs.getRow();
+            System.out.println("Total rows: " + totalRows);
+            
+            // Move to first row
+            rs.first();
+            System.out.println("First device: " + rs.getString("name"));
+            
+            // Move to middle
+            rs.absolute(totalRows / 2);
+            System.out.println("Middle device: " + rs.getString("name"));
+        }
+    }
+}</code></pre>
+        
+        <h3>2. ResultSetMetaData</h3>
+        <pre><code>public class ResultSetMetaDataExample {
+    
+    public void printTableInfo() throws SQLException {
+        String sql = "SELECT * FROM devices";
+        
+        try (Connection conn = HikariCPExample.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            
+            ResultSetMetaData metaData = rs.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            
+            System.out.println("Table: " + metaData.getTableName(1));
+            System.out.println("Columns:");
+            
+            for (int i = 1; i <= columnCount; i++) {
+                String columnName = metaData.getColumnName(i);
+                String columnType = metaData.getColumnTypeName(i);
+                int columnSize = metaData.getColumnDisplaySize(i);
+                boolean nullable = metaData.isNullable(i) == ResultSetMetaData.columnNullable;
+                
+                System.out.printf("  %s (%s, size: %d, nullable: %s)%n",
+                    columnName, columnType, columnSize, nullable);
+            }
+        }
+    }
+}</code></pre>
+        
+        <h2>Database Schema Management</h2>
+        
+        <h3>1. Create Table</h3>
+        <pre><code>public class SchemaManagement {
+    
+    public void createTables() throws SQLException {
+        String createDevicesTable = """
+            CREATE TABLE IF NOT EXISTS devices (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                type VARCHAR(50) NOT NULL,
+                ip_address VARCHAR(15) NOT NULL,
+                status VARCHAR(20) DEFAULT 'inactive',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_ip (ip_address),
+                INDEX idx_type (type),
+                INDEX idx_status (status)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """;
+        
+        String createLogsTable = """
+            CREATE TABLE IF NOT EXISTS device_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                device_id INT NOT NULL,
+                log_level VARCHAR(10) NOT NULL,
+                message TEXT NOT NULL,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
+                INDEX idx_device_id (device_id),
+                INDEX idx_timestamp (timestamp)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """;
+        
+        try (Connection conn = HikariCPExample.getConnection()) {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(createDevicesTable);
+                stmt.execute(createLogsTable);
+                System.out.println("Tables created successfully");
+            }
+        }
+    }
+    
+    public void createIndexes() throws SQLException {
+        String[] indexes = {
+            "CREATE INDEX idx_devices_name ON devices(name)",
+            "CREATE INDEX idx_devices_type_status ON devices(type, status)",
+            "CREATE INDEX idx_logs_device_timestamp ON device_logs(device_id, timestamp)"
+        };
+        
+        try (Connection conn = HikariCPExample.getConnection();
+             Statement stmt = conn.createStatement()) {
+            
+            for (String indexSql : indexes) {
+                try {
+                    stmt.execute(indexSql);
+                    System.out.println("Index created: " + indexSql);
+                } catch (SQLException e) {
+                    System.out.println("Index might already exist: " + e.getMessage());
+                }
+            }
+        }
+    }
+}</code></pre>
+        
+        <h2>Error Handling và Logging</h2>
+        
+        <h3>1. SQLException Handling</h3>
+        <pre><code>public class ErrorHandlingExample {
+    
+    public void handleSQLException() {
+        try {
+            performDatabaseOperation();
+        } catch (SQLException e) {
+            System.err.println("SQL Error Code: " + e.getErrorCode());
+            System.err.println("SQL State: " + e.getSQLState());
+            System.err.println("Message: " + e.getMessage());
+            
+            // Handle specific error codes
+            switch (e.getErrorCode()) {
+                case 1062: // Duplicate entry
+                    System.err.println("Duplicate entry error");
+                    break;
+                case 1452: // Foreign key constraint
+                    System.err.println("Foreign key constraint error");
+                    break;
+                case 2003: // Connection refused
+                    System.err.println("Database connection refused");
+                    break;
+                default:
+                    System.err.println("Unknown database error");
+            }
+            
+            // Print stack trace for debugging
+            e.printStackTrace();
+        }
+    }
+    
+    private void performDatabaseOperation() throws SQLException {
+        // Database operations here
+    }
+    
+    public void retryOperation() {
+        int maxRetries = 3;
+        int retryCount = 0;
+        
+        while (retryCount < maxRetries) {
+            try {
+                performDatabaseOperation();
+                break; // Success, exit loop
+            } catch (SQLException e) {
+                retryCount++;
+                if (retryCount >= maxRetries) {
+                    System.err.println("Max retries reached, operation failed");
+                    throw new RuntimeException("Database operation failed after " + maxRetries + " retries", e);
+                }
+                
+                System.out.println("Retry " + retryCount + " after error: " + e.getMessage());
+                try {
+                    Thread.sleep(1000 * retryCount); // Exponential backoff
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Retry interrupted", ie);
+                }
+            }
+        }
+    }
+}</code></pre>
+        
+        <h2>Performance Optimization</h2>
+        
+        <h3>1. Connection Pool Tuning</h3>
+        <pre><code>public class PerformanceOptimization {
+    
+    public HikariConfig createOptimizedConfig() {
+        HikariConfig config = new HikariConfig();
+        
+        // Basic connection settings
+        config.setJdbcUrl("jdbc:mysql://localhost:3306/networkdb");
+        config.setUsername("root");
+        config.setPassword("password");
+        
+        // Pool sizing
+        config.setMaximumPoolSize(20);        // Max connections
+        config.setMinimumIdle(5);            // Min idle connections
+        config.setConnectionTimeout(30000);  // 30 seconds
+        
+        // Connection lifecycle
+        config.setIdleTimeout(600000);       // 10 minutes
+        config.setMaxLifetime(1800000);      // 30 minutes
+        
+        // Validation
+        config.setConnectionTestQuery("SELECT 1");
+        config.setValidationTimeout(5000);
+        
+        // MySQL specific optimizations
+        config.addDataSourceProperty("cachePrepStmts", "true");
+        config.addDataSourceProperty("prepStmtCacheSize", "250");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+        config.addDataSourceProperty("useServerPrepStmts", "true");
+        config.addDataSourceProperty("useLocalSessionState", "true");
+        config.addDataSourceProperty("rewriteBatchedStatements", "true");
+        config.addDataSourceProperty("cacheResultSetMetadata", "true");
+        config.addDataSourceProperty("cacheServerConfiguration", "true");
+        config.addDataSourceProperty("elideSetAutoCommits", "true");
+        config.addDataSourceProperty("maintainTimeStats", "false");
+        
+        return config;
+    }
+    
+    public void batchProcessing() throws SQLException {
+        String sql = "INSERT INTO device_logs (device_id, log_level, message) VALUES (?, ?, ?)";
+        
+        try (Connection conn = HikariCPExample.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            conn.setAutoCommit(false);
+            
+            // Batch insert
+            for (int i = 0; i < 1000; i++) {
+                pstmt.setInt(1, i % 10 + 1); // device_id
+                pstmt.setString(2, "INFO");
+                pstmt.setString(3, "Log message " + i);
+                pstmt.addBatch();
+                
+                // Execute batch every 100 records
+                if (i % 100 == 0) {
+                    pstmt.executeBatch();
+                    conn.commit();
+                }
+            }
+            
+            // Execute remaining batch
+            pstmt.executeBatch();
+            conn.commit();
+            
+            System.out.println("Batch processing completed");
+        }
+    }
+}</code></pre>
+        
+        <h2>Testing JDBC Code</h2>
+        
+        <h3>1. Unit Testing với H2 Database</h3>
+        <pre><code>import org.junit.jupiter.api.*;
+import org.h2.jdbcx.JdbcDataSource;
+import java.sql.*;
+
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+public class JDBCUnitTest {
+    
+    private static Connection connection;
+    private static DeviceDAO deviceDAO;
+    
+    @BeforeAll
+    static void setUp() throws SQLException {
+        // Setup in-memory H2 database
+        JdbcDataSource dataSource = new JdbcDataSource();
+        dataSource.setURL("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1");
+        dataSource.setUser("sa");
+        dataSource.setPassword("");
+        
+        connection = dataSource.getConnection();
+        deviceDAO = new DeviceDAO(connection);
+        
+        // Create test tables
+        createTestTables();
+    }
+    
+    @AfterAll
+    static void tearDown() throws SQLException {
+        if (connection != null) {
+            connection.close();
+        }
+    }
+    
+    @Test
+    @Order(1)
+    void testInsertDevice() throws SQLException {
+        Device device = new Device();
+        device.setName("Test Router");
+        device.setType("router");
+        device.setIpAddress("192.168.1.1");
+        device.setStatus("active");
+        
+        int result = deviceDAO.insertDevice(device);
+        assertEquals(1, result);
+        assertTrue(device.getId() > 0);
+    }
+    
+    @Test
+    @Order(2)
+    void testGetDeviceById() throws SQLException {
+        Device device = deviceDAO.getDeviceById(1);
+        assertNotNull(device);
+        assertEquals("Test Router", device.getName());
+        assertEquals("router", device.getType());
+    }
+    
+    @Test
+    @Order(3)
+    void testUpdateDevice() throws SQLException {
+        Device device = deviceDAO.getDeviceById(1);
+        device.setStatus("inactive");
+        
+        int result = deviceDAO.updateDevice(device);
+        assertEquals(1, result);
+        
+        Device updatedDevice = deviceDAO.getDeviceById(1);
+        assertEquals("inactive", updatedDevice.getStatus());
+    }
+    
+    @Test
+    @Order(4)
+    void testDeleteDevice() throws SQLException {
+        int result = deviceDAO.deleteDevice(1);
+        assertEquals(1, result);
+        
+        Device device = deviceDAO.getDeviceById(1);
+        assertNull(device);
+    }
+    
+    private static void createTestTables() throws SQLException {
+        String createTable = """
+            CREATE TABLE devices (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                type VARCHAR(50) NOT NULL,
+                ip_address VARCHAR(15) NOT NULL,
+                status VARCHAR(20) DEFAULT 'inactive'
+            )
+            """;
+        
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(createTable);
+        }
+    }
+}</code></pre>
+        
+        <h2>Best Practices</h2>
+        
+        <h3>1. Resource Management</h3>
+        <pre><code>public class BestPractices {
+    
+    // ✅ Good - Use try-with-resources
+    public List<Device> getDevicesGood() throws SQLException {
+        String sql = "SELECT * FROM devices";
+        List<Device> devices = new ArrayList<>();
+        
+        try (Connection conn = HikariCPExample.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            
+            while (rs.next()) {
+                devices.add(mapResultSetToDevice(rs));
+            }
+        }
+        return devices;
+    }
+    
+    // ❌ Bad - Manual resource management
+    public List<Device> getDevicesBad() throws SQLException {
+        String sql = "SELECT * FROM devices";
+        List<Device> devices = new ArrayList<>();
+        
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        
+        try {
+            conn = HikariCPExample.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            
+    while (rs.next()) {
+                devices.add(mapResultSetToDevice(rs));
+            }
+        } finally {
+            if (rs != null) rs.close();
+            if (pstmt != null) pstmt.close();
+            if (conn != null) conn.close();
+        }
+        return devices;
+    }
+    
+    // ✅ Good - Use PreparedStatement
+    public Device getDeviceByName(String name) throws SQLException {
+        String sql = "SELECT * FROM devices WHERE name = ?";
+        
+        try (Connection conn = HikariCPExample.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, name);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToDevice(rs);
+                }
+            }
+        }
+        return null;
+    }
+    
+    // ❌ Bad - String concatenation (SQL injection risk)
+    public Device getDeviceByNameBad(String name) throws SQLException {
+        String sql = "SELECT * FROM devices WHERE name = '" + name + "'";
+        // This is vulnerable to SQL injection!
+        
+        try (Connection conn = HikariCPExample.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            if (rs.next()) {
+                return mapResultSetToDevice(rs);
+            }
+        }
+        return null;
+    }
+    
+    private Device mapResultSetToDevice(ResultSet rs) throws SQLException {
+        Device device = new Device();
+        device.setId(rs.getInt("id"));
+        device.setName(rs.getString("name"));
+        device.setType(rs.getString("type"));
+        device.setIpAddress(rs.getString("ip_address"));
+        device.setStatus(rs.getString("status"));
+        return device;
+    }
+}</code></pre>
+        
+        <h2>Kết luận</h2>
+        <p>
+          JDBC là nền tảng quan trọng để làm việc với database trong Java. 
+          Việc sử dụng đúng các best practices giúp:
+        </p>
+        <ul class="list">
+          <li>Tăng hiệu suất ứng dụng thông qua connection pooling</li>
+          <li>Đảm bảo an toàn dữ liệu với PreparedStatement</li>
+          <li>Quản lý transaction hiệu quả</li>
+          <li>Tránh memory leaks với proper resource management</li>
+          <li>Dễ dàng test và maintain code</li>
+        </ul>
+        <p>
+          Hãy nhớ rằng JDBC là low-level API - 
+          đối với các ứng dụng phức tạp, hãy cân nhắc sử dụng ORM frameworks như JPA/Hibernate.
+        </p>
+    </main>
+  </body>
+  </html>
+
+

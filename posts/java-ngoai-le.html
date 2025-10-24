@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Java: xử lý ngoại lệ đúng cách</title>
+    <meta name="description" content="Thực hành try/catch/finally và tạo ngoại lệ tuỳ biến.">
+    <link rel="stylesheet" href="../css/styles.css">
+  </head>
+  <body>
+    <main class="container post">
+      <a class="back" href="../blog.html">← Quay lại Blog</a>
+      <h1>Java: xử lý ngoại lệ đúng cách</h1>
+      <div class="meta">Chủ đề: <span class="tag tag-java">Java</span></div>
+      <article class="card">
+        <h2>Giới thiệu về Exception Handling</h2>
+        <p>
+          Exception handling là một cơ chế quan trọng trong Java để xử lý các tình huống bất thường 
+          có thể xảy ra trong quá trình thực thi chương trình. Việc xử lý exception đúng cách giúp 
+          ứng dụng ổn định, dễ debug và maintain.
+        </p>
+        
+        <h2>Phân loại Exception</h2>
+        
+        <h3>1. Checked Exceptions</h3>
+        <p>
+          Checked exceptions là những exception mà compiler bắt buộc phải xử lý. 
+          Chúng thường đại diện cho các lỗi có thể recover được:
+        </p>
+        <ul class="list">
+          <li><strong>IOException</strong>: Lỗi I/O (file không tồn tại, không có quyền đọc/ghi)</li>
+          <li><strong>SQLException</strong>: Lỗi database connection</li>
+          <li><strong>ClassNotFoundException</strong>: Không tìm thấy class</li>
+          <li><strong>ParseException</strong>: Lỗi parse dữ liệu</li>
+        </ul>
+        
+        <h3>2. Unchecked Exceptions (Runtime Exceptions)</h3>
+        <p>
+          Unchecked exceptions không bắt buộc phải xử lý và thường đại diện cho lỗi lập trình:
+        </p>
+        <ul class="list">
+          <li><strong>NullPointerException</strong>: Truy cập object null</li>
+          <li><strong>IllegalArgumentException</strong>: Tham số không hợp lệ</li>
+          <li><strong>ArrayIndexOutOfBoundsException</strong>: Truy cập index không hợp lệ</li>
+          <li><strong>ClassCastException</strong>: Ép kiểu không hợp lệ</li>
+        </ul>
+        
+        <h3>3. Errors</h3>
+        <p>
+          Errors là những lỗi nghiêm trọng mà ứng dụng không thể recover:
+        </p>
+        <ul class="list">
+          <li><strong>OutOfMemoryError</strong>: Hết bộ nhớ</li>
+          <li><strong>StackOverflowError</strong>: Stack overflow</li>
+          <li><strong>NoClassDefFoundError</strong>: Không tìm thấy class definition</li>
+        </ul>
+        
+        <h2>Exception Hierarchy</h2>
+        <pre><code>Throwable
+├── Error
+│   ├── OutOfMemoryError
+│   ├── StackOverflowError
+│   └── ...
+└── Exception
+    ├── RuntimeException (Unchecked)
+    │   ├── NullPointerException
+    │   ├── IllegalArgumentException
+    │   └── ...
+    └── Other Exceptions (Checked)
+        ├── IOException
+        ├── SQLException
+        └── ...</code></pre>
+        
+        <h2>Các cách xử lý Exception</h2>
+        
+        <h3>1. Try-Catch-Finally</h3>
+        <pre><code>public class FileProcessor {
+    public String readFile(String filePath) {
+        FileReader reader = null;
+        try {
+            reader = new FileReader(filePath);
+            // Đọc file
+            return "File content";
+        } catch (FileNotFoundException e) {
+            System.err.println("File không tồn tại: " + filePath);
+            return null;
+        } catch (IOException e) {
+            System.err.println("Lỗi đọc file: " + e.getMessage());
+            return null;
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    System.err.println("Lỗi đóng file: " + e.getMessage());
+                }
+            }
+        }
+    }
+}</code></pre>
+        
+        <h3>2. Try-With-Resources (Java 7+)</h3>
+        <pre><code>public class FileProcessor {
+    public String readFile(String filePath) {
+        try (FileReader reader = new FileReader(filePath);
+             BufferedReader bufferedReader = new BufferedReader(reader)) {
+            
+            StringBuilder content = new StringBuilder();
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                content.append(line).append("\n");
+            }
+            return content.toString();
+            
+        } catch (FileNotFoundException e) {
+            System.err.println("File không tồn tại: " + filePath);
+            return null;
+        } catch (IOException e) {
+            System.err.println("Lỗi đọc file: " + e.getMessage());
+            return null;
+        }
+        // Resources tự động được đóng
+    }
+}</code></pre>
+        
+        <h3>3. Multiple Catch Blocks</h3>
+        <pre><code>public class DatabaseManager {
+    public void processData(String query) {
+        try {
+            Connection conn = DriverManager.getConnection(url, user, password);
+            PreparedStatement stmt = conn.prepareStatement(query);
+            ResultSet rs = stmt.executeQuery();
+            
+            // Xử lý kết quả
+            while (rs.next()) {
+                System.out.println(rs.getString("name"));
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("Lỗi database: " + e.getMessage());
+        } catch (ClassNotFoundException e) {
+            System.err.println("Driver không tìm thấy: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Lỗi không xác định: " + e.getMessage());
+        }
+    }
+}</code></pre>
+        
+        <h2>Tạo Custom Exceptions</h2>
+        
+        <h3>1. Business Exception</h3>
+        <pre><code>// Custom exception cho business logic
+public class InsufficientFundsException extends Exception {
+    private final double currentBalance;
+    private final double requestedAmount;
+    
+    public InsufficientFundsException(double currentBalance, double requestedAmount) {
+        super(String.format("Số dư không đủ. Hiện tại: %.2f, Yêu cầu: %.2f", 
+              currentBalance, requestedAmount));
+        this.currentBalance = currentBalance;
+        this.requestedAmount = requestedAmount;
+    }
+    
+    public double getCurrentBalance() {
+        return currentBalance;
+    }
+    
+    public double getRequestedAmount() {
+        return requestedAmount;
+    }
+    
+    public double getShortfall() {
+        return requestedAmount - currentBalance;
+    }
+}
+
+// Sử dụng custom exception
+public class BankAccount {
+    private double balance;
+    
+    public void withdraw(double amount) throws InsufficientFundsException {
+        if (amount > balance) {
+            throw new InsufficientFundsException(balance, amount);
+        }
+        balance -= amount;
+    }
+}</code></pre>
+        
+        <h3>2. Validation Exception</h3>
+        <pre><code>// Exception cho validation
+public class ValidationException extends Exception {
+    private final List<String> errors;
+    
+    public ValidationException(String message) {
+        super(message);
+        this.errors = new ArrayList<>();
+    }
+    
+    public ValidationException(List<String> errors) {
+        super("Validation failed: " + String.join(", ", errors));
+        this.errors = new ArrayList<>(errors);
+    }
+    
+    public List<String> getErrors() {
+        return Collections.unmodifiableList(errors);
+    }
+    
+    public void addError(String error) {
+        errors.add(error);
+    }
+}
+
+// Sử dụng validation exception
+public class UserValidator {
+    public void validateUser(User user) throws ValidationException {
+        List<String> errors = new ArrayList<>();
+        
+        if (user.getEmail() == null || !user.getEmail().contains("@")) {
+            errors.add("Email không hợp lệ");
+        }
+        
+        if (user.getAge() < 18) {
+            errors.add("Tuổi phải từ 18 trở lên");
+        }
+        
+        if (!errors.isEmpty()) {
+            throw new ValidationException(errors);
+        }
+    }
+}</code></pre>
+        
+        <h2>Best Practices</h2>
+        
+        <h3>1. Exception Chaining</h3>
+        <pre><code>public class ConfigurationLoader {
+    public Properties loadConfig(String configPath) throws ConfigurationException {
+        try {
+            FileInputStream fis = new FileInputStream(configPath);
+            Properties props = new Properties();
+            props.load(fis);
+            return props;
+        } catch (FileNotFoundException e) {
+            throw new ConfigurationException("Không tìm thấy file config: " + configPath, e);
+        } catch (IOException e) {
+            throw new ConfigurationException("Lỗi đọc file config: " + configPath, e);
+        }
+    }
+}</code></pre>
+        
+        <h3>2. Specific Exception Handling</h3>
+        <pre><code>public class NetworkService {
+    public String fetchData(String url) {
+        try {
+            URL urlObj = new URL(url);
+            HttpURLConnection conn = (HttpURLConnection) urlObj.openConnection();
+            
+            int responseCode = conn.getResponseCode();
+            if (responseCode == 404) {
+                throw new ResourceNotFoundException("Resource not found: " + url);
+            } else if (responseCode >= 500) {
+                throw new ServerException("Server error: " + responseCode);
+            }
+            
+            // Đọc response
+            return readResponse(conn);
+            
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("URL không hợp lệ: " + url, e);
+        } catch (IOException e) {
+            throw new NetworkException("Lỗi kết nối mạng: " + url, e);
+        }
+    }
+}</code></pre>
+        
+        <h3>3. Resource Management</h3>
+        <pre><code>public class DatabaseService {
+    public List<User> getUsers() throws SQLException {
+        String sql = "SELECT * FROM users";
+        
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            
+            List<User> users = new ArrayList<>();
+            while (rs.next()) {
+                User user = new User();
+                user.setId(rs.getLong("id"));
+                user.setName(rs.getString("name"));
+                user.setEmail(rs.getString("email"));
+                users.add(user);
+            }
+            return users;
+        }
+        // Tất cả resources sẽ được đóng tự động
+    }
+}</code></pre>
+        
+        <h2>Exception Handling Patterns</h2>
+        
+        <h3>1. Retry Pattern</h3>
+        <pre><code>public class RetryableService {
+    private static final int MAX_RETRIES = 3;
+    private static final long RETRY_DELAY = 1000; // 1 second
+    
+    public String fetchDataWithRetry(String url) throws NetworkException {
+        Exception lastException = null;
+        
+        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                return fetchData(url);
+            } catch (IOException e) {
+                lastException = e;
+                if (attempt < MAX_RETRIES) {
+                    System.out.println("Attempt " + attempt + " failed, retrying...");
+                    try {
+                        Thread.sleep(RETRY_DELAY * attempt); // Exponential backoff
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new NetworkException("Retry interrupted", ie);
+                    }
+                }
+            }
+        }
+        
+        throw new NetworkException("Failed after " + MAX_RETRIES + " attempts", lastException);
+    }
+}</code></pre>
+        
+        <h3>2. Circuit Breaker Pattern</h3>
+        <pre><code>public class CircuitBreaker {
+    private enum State { CLOSED, OPEN, HALF_OPEN }
+    
+    private State state = State.CLOSED;
+    private int failureCount = 0;
+    private long lastFailureTime = 0;
+    private final int failureThreshold = 5;
+    private final long timeout = 60000; // 1 minute
+    
+    public <T> T execute(Supplier<T> operation) throws CircuitBreakerException {
+        if (state == State.OPEN) {
+            if (System.currentTimeMillis() - lastFailureTime > timeout) {
+                state = State.HALF_OPEN;
+            } else {
+                throw new CircuitBreakerException("Circuit breaker is OPEN");
+            }
+        }
+        
+        try {
+            T result = operation.get();
+            onSuccess();
+            return result;
+        } catch (Exception e) {
+            onFailure();
+            throw e;
+        }
+    }
+    
+    private void onSuccess() {
+        failureCount = 0;
+        state = State.CLOSED;
+    }
+    
+    private void onFailure() {
+        failureCount++;
+        lastFailureTime = System.currentTimeMillis();
+        
+        if (failureCount >= failureThreshold) {
+            state = State.OPEN;
+        }
+    }
+}</code></pre>
+        
+        <h2>Logging và Monitoring</h2>
+        
+        <h3>1. Structured Logging</h3>
+        <pre><code>import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class PaymentService {
+    private static final Logger logger = LoggerFactory.getLogger(PaymentService.class);
+    
+    public void processPayment(PaymentRequest request) {
+        try {
+            logger.info("Processing payment for user: {}, amount: {}", 
+                       request.getUserId(), request.getAmount());
+            
+            validatePayment(request);
+            chargeCard(request);
+            
+            logger.info("Payment processed successfully for user: {}", request.getUserId());
+            
+        } catch (InsufficientFundsException e) {
+            logger.warn("Insufficient funds for user: {}, shortfall: {}", 
+                       request.getUserId(), e.getShortfall());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error processing payment for user: {}", 
+                        request.getUserId(), e);
+            throw new PaymentException("Payment processing failed", e);
+        }
+    }
+}</code></pre>
+        
+        <h2>Testing Exception Handling</h2>
+        
+        <h3>1. Unit Testing Exceptions</h3>
+        <pre><code>@Test
+public void testInsufficientFundsException() {
+    BankAccount account = new BankAccount(100.0);
+    
+    assertThrows(InsufficientFundsException.class, () -> {
+        account.withdraw(200.0);
+    });
+}
+
+@Test
+public void testValidationException() {
+    UserValidator validator = new UserValidator();
+    User invalidUser = new User("", 16);
+    
+    ValidationException exception = assertThrows(ValidationException.class, () -> {
+        validator.validateUser(invalidUser);
+    });
+    
+    assertTrue(exception.getErrors().contains("Email không hợp lệ"));
+    assertTrue(exception.getErrors().contains("Tuổi phải từ 18 trở lên"));
+}
+
+@Test
+public void testRetryMechanism() {
+    RetryableService service = new RetryableService();
+    
+    // Mock để fail 2 lần đầu, success lần thứ 3
+    when(mockService.fetchData(anyString()))
+        .thenThrow(new IOException("Network error"))
+        .thenThrow(new IOException("Network error"))
+        .thenReturn("Success");
+    
+    String result = service.fetchDataWithRetry("http://example.com");
+    assertEquals("Success", result);
+}</code></pre>
+        
+        <h2>Common Mistakes và Cách Tránh</h2>
+        
+        <h3>1. Swallowing Exceptions</h3>
+        <pre><code>// ❌ Sai - Nuốt exception
+try {
+    riskyOperation();
+} catch (Exception e) {
+    // Không làm gì cả
+}
+
+// ✅ Đúng - Log và xử lý
+try {
+    riskyOperation();
+} catch (Exception e) {
+    logger.error("Operation failed", e);
+    // Hoặc throw lại exception phù hợp
+    throw new BusinessException("Operation failed", e);
+}</code></pre>
+        
+        <h3>2. Catching Generic Exception</h3>
+        <pre><code>// ❌ Sai - Catch quá generic
+try {
+    processData();
+} catch (Exception e) {
+    // Xử lý tất cả exception giống nhau
+}
+
+// ✅ Đúng - Catch specific exceptions
+try {
+    processData();
+} catch (IOException e) {
+    // Xử lý I/O error
+} catch (SQLException e) {
+    // Xử lý database error
+} catch (ValidationException e) {
+    // Xử lý validation error
+}</code></pre>
+        
+        <h3>3. Using Exceptions for Control Flow</h3>
+        <pre><code>// ❌ Sai - Dùng exception cho control flow
+public boolean isUserExists(String username) {
+    try {
+        userService.findUser(username);
+        return true;
+    } catch (UserNotFoundException e) {
+        return false;
+    }
+}
+
+// ✅ Đúng - Dùng return value
+public boolean isUserExists(String username) {
+    return userService.findUser(username) != null;
+}</code></pre>
+        
+        <h2>Performance Considerations</h2>
+        
+        <h3>1. Exception Creation Cost</h3>
+        <pre><code>// Exception creation có cost cao vì phải tạo stack trace
+// Tránh tạo exception trong tight loops
+public class PerformanceExample {
+    // ❌ Chậm - Tạo exception trong loop
+    public void processItems(List<String> items) {
+        for (String item : items) {
+            try {
+                validateItem(item);
+            } catch (ValidationException e) {
+                // Handle
+            }
+        }
+    }
+    
+    // ✅ Nhanh - Validate trước
+    public void processItems(List<String> items) {
+        List<String> validItems = items.stream()
+            .filter(this::isValidItem)
+            .collect(Collectors.toList());
+        
+        for (String item : validItems) {
+            processItem(item);
+        }
+    }
+}</code></pre>
+        
+        <h2>Kết luận</h2>
+        <p>
+          Exception handling là một phần quan trọng của việc viết code Java chất lượng. 
+          Việc xử lý exception đúng cách giúp:
+        </p>
+        <ul class="list">
+          <li>Tăng tính ổn định của ứng dụng</li>
+          <li>Dễ debug và maintain</li>
+          <li>Cải thiện user experience</li>
+          <li>Tuân thủ best practices</li>
+        </ul>
+        <p>
+          Hãy nhớ rằng exception handling không chỉ là về việc catch và log errors, 
+          mà còn về việc thiết kế hệ thống có khả năng phục hồi và xử lý các tình huống bất thường một cách graceful.
+        </p>
+    </main>
+  </body>
+  </html>
+
+

@@ -1,0 +1,2398 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Node.js & npm cơ bản</title>
+    <meta name="description" content="Khởi tạo dự án, script và quản lý package.">
+    <link rel="stylesheet" href="../css/styles.css">
+  </head>
+  <body>
+    <main class="container post">
+      <a class="back" href="../blog.html">← Quay lại Blog</a>
+      <h1>Node.js & npm cơ bản</h1>
+      <div class="meta">Chủ đề: <span class="tag tag-js">JavaScript</span></div>
+      <article class="card">
+        <h2>Giới thiệu về Node.js và npm</h2>
+        <p>
+          Node.js là một runtime JavaScript được xây dựng trên Chrome V8 JavaScript engine, 
+          cho phép chạy JavaScript trên server-side. npm (Node Package Manager) là công cụ 
+          quản lý package và dependencies cho Node.js. Cùng nhau, chúng tạo nên một ecosystem 
+          mạnh mẽ cho việc phát triển ứng dụng JavaScript.
+        </p>
+        
+        <h2>Node.js Fundamentals</h2>
+        
+        <h3>1. Event Loop và Non-blocking I/O</h3>
+        <pre><code>// Event Loop demonstration
+console.log('Start');
+
+setTimeout(() => {
+    console.log('Timer 1');
+}, 0);
+
+setImmediate(() => {
+    console.log('Immediate 1');
+});
+
+process.nextTick(() => {
+    console.log('NextTick 1');
+});
+
+Promise.resolve().then(() => {
+    console.log('Promise 1');
+});
+
+console.log('End');
+
+// Output order:
+// Start
+// End
+// NextTick 1
+// Promise 1
+// Timer 1
+// Immediate 1
+
+// Non-blocking I/O example
+const fs = require('fs');
+
+// ❌ Blocking (synchronous)
+console.time('sync');
+const data1 = fs.readFileSync('large-file.txt', 'utf8');
+console.log('Sync read completed');
+console.timeEnd('sync');
+
+// ✅ Non-blocking (asynchronous)
+console.time('async');
+fs.readFile('large-file.txt', 'utf8', (err, data) => {
+    if (err) throw err;
+    console.log('Async read completed');
+    console.timeEnd('async');
+});
+
+console.log('This runs immediately');
+
+// Event Loop phases
+function demonstrateEventLoopPhases() {
+    console.log('=== Event Loop Phases ===');
+    
+    // Phase 1: Timer phase
+    setTimeout(() => console.log('Timer phase'), 0);
+    
+    // Phase 2: Pending callbacks
+    setImmediate(() => console.log('Check phase'));
+    
+    // Phase 3: Idle, prepare (internal)
+    
+    // Phase 4: Poll phase
+    fs.readFile(__filename, () => {
+        console.log('Poll phase - I/O callback');
+        
+        // Phase 5: Check phase
+        setImmediate(() => console.log('Check phase - after I/O'));
+    });
+    
+    // Phase 6: Close callbacks
+    const server = require('http').createServer();
+    server.on('close', () => console.log('Close phase'));
+    
+    // Microtasks (higher priority)
+    process.nextTick(() => console.log('NextTick - highest priority'));
+    Promise.resolve().then(() => console.log('Promise - high priority'));
+}
+
+demonstrateEventLoopPhases();</code></pre>
+        
+        <h3>2. Worker Threads</h3>
+        <pre><code>// Worker Threads for CPU-intensive tasks
+const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
+
+if (isMainThread) {
+    // Main thread
+    console.log('Main thread started');
+    
+    const worker = new Worker(__filename, {
+        workerData: { start: 1, end: 1000000 }
+    });
+    
+    worker.on('message', (result) => {
+        console.log('Result from worker:', result);
+    });
+    
+    worker.on('error', (error) => {
+        console.error('Worker error:', error);
+    });
+    
+    worker.on('exit', (code) => {
+        console.log('Worker exited with code:', code);
+    });
+    
+    // Continue main thread work
+    console.log('Main thread continues...');
+    
+} else {
+    // Worker thread
+    console.log('Worker thread started');
+    
+    const { start, end } = workerData;
+    let sum = 0;
+    
+    // CPU-intensive calculation
+    for (let i = start; i <= end; i++) {
+        sum += Math.sqrt(i);
+    }
+    
+    // Send result back to main thread
+    parentPort.postMessage({ sum, processed: end - start + 1 });
+    
+    console.log('Worker thread finished');
+}
+
+// Worker Pool implementation
+class WorkerPool {
+    constructor(scriptPath, poolSize = 4) {
+        this.scriptPath = scriptPath;
+        this.poolSize = poolSize;
+        this.workers = [];
+        this.queue = [];
+        this.busyWorkers = new Set();
+        
+        this.initializeWorkers();
+    }
+    
+    initializeWorkers() {
+        for (let i = 0; i < this.poolSize; i++) {
+            const worker = new Worker(this.scriptPath);
+            worker.id = i;
+            this.workers.push(worker);
+            
+            worker.on('message', (result) => {
+                this.busyWorkers.delete(worker);
+                this.processQueue();
+            });
+            
+            worker.on('error', (error) => {
+                console.error(`Worker ${i} error:`, error);
+                this.busyWorkers.delete(worker);
+                this.processQueue();
+            });
+        }
+    }
+    
+    execute(data) {
+        return new Promise((resolve, reject) => {
+            this.queue.push({ data, resolve, reject });
+            this.processQueue();
+        });
+    }
+    
+    processQueue() {
+        if (this.queue.length === 0) return;
+        
+        const availableWorker = this.workers.find(worker => 
+            !this.busyWorkers.has(worker)
+        );
+        
+        if (availableWorker) {
+            const { data, resolve, reject } = this.queue.shift();
+            this.busyWorkers.add(availableWorker);
+            
+            availableWorker.once('message', resolve);
+            availableWorker.once('error', reject);
+            availableWorker.postMessage(data);
+        }
+    }
+    
+    terminate() {
+        this.workers.forEach(worker => worker.terminate());
+        this.workers = [];
+        this.queue = [];
+        this.busyWorkers.clear();
+    }
+}
+
+// Usage
+const pool = new WorkerPool('./worker.js', 4);
+
+async function processMultipleTasks() {
+    const tasks = Array.from({ length: 10 }, (_, i) => 
+        pool.execute({ taskId: i, data: Math.random() * 1000 })
+    );
+    
+    const results = await Promise.all(tasks);
+    console.log('All tasks completed:', results);
+    
+    pool.terminate();
+}</code></pre>
+        
+        <h2>npm Package Management</h2>
+        
+        <h3>1. Package.json và Semver</h3>
+        <pre><code>// package.json structure
+{
+  "name": "my-awesome-project",
+  "version": "1.0.0",
+  "description": "A sample Node.js project",
+  "main": "index.js",
+  "type": "module", // ESM support
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "jest",
+    "build": "webpack --mode production",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "prepare": "husky install"
+  },
+  "keywords": ["nodejs", "javascript", "api"],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "~1.4.0",
+    "lodash": "4.17.21"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.5.0",
+    "eslint": "^8.42.0",
+    "prettier": "^2.8.8"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0"
+  },
+  "optionalDependencies": {
+    "fsevents": "^2.3.2"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/user/repo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/user/repo/issues"
+  },
+  "homepage": "https://github.com/user/repo#readme"
+}
+
+// Semantic Versioning (Semver)
+// Major.Minor.Patch (1.2.3)
+// ^ (caret): Compatible within major version
+// ~ (tilde): Compatible within minor version
+// Exact: Exact version match
+
+// Examples:
+"express": "^4.18.2"    // >=4.18.2 <5.0.0
+"axios": "~1.4.0"       // >=1.4.0 <1.5.0
+"lodash": "4.17.21"     // Exactly 4.17.21
+"react": ">=16.8.0"     // >=16.8.0
+"typescript": "latest"  // Latest version (not recommended)
+
+// npm commands
+console.log('=== npm Commands ===');
+
+// Package installation
+// npm install package-name          # Install as dependency
+// npm install -D package-name       # Install as devDependency
+// npm install -g package-name       # Install globally
+// npm install --save-optional       # Install as optionalDependency
+
+// Package management
+// npm uninstall package-name        # Remove package
+// npm update                        # Update all packages
+// npm update package-name           # Update specific package
+// npm outdated                      # Check outdated packages
+
+// Scripts and execution
+// npm run script-name               # Run script
+// npm start                         # Run start script
+// npm test                          # Run test script
+// npm run build                     # Run build script
+
+// Package publishing
+// npm publish                       # Publish package
+// npm unpublish package-name        # Unpublish package
+// npm version patch                 # Bump patch version
+// npm version minor                 # Bump minor version
+// npm version major                 # Bump major version</code></pre>
+        
+        <h3>2. Package Lock và Dependency Management</h3>
+        <pre><code>// package-lock.json importance
+// - Locks exact versions of all dependencies
+// - Ensures reproducible builds
+// - Speeds up npm install
+// - Should be committed to version control
+
+// .gitignore for Node.js projects
+const gitignoreContent = `
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Grunt intermediate storage
+.grunt
+
+# Bower dependency directory
+bower_components
+
+# node-waf configuration
+.lock-wscript
+
+# Compiled binary addons
+build/Release
+
+# Dependency directories
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+.env.test
+.env.local
+.env.production
+
+# parcel-bundler cache
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Directory for instrumented libs generated by jscoverage/JSCover
+lib-cov
+
+# Coverage directory used by tools like istanbul
+coverage
+
+# Grunt intermediate storage
+.grunt
+
+# Bower dependency directory
+bower_components
+
+# node-waf configuration
+.lock-wscript
+
+# Compiled binary addons
+build/Release
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+
+# parcel-bundler cache
+.cache
+.parcel-cache
+
+# next.js build output
+.next
+
+# nuxt.js build output
+.nuxt
+
+# vuepress build output
+.vuepress/dist
+
+# Serverless directories
+.serverless
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+`;
+
+// Dependency resolution strategies
+class DependencyManager {
+    constructor() {
+        this.dependencies = new Map();
+        this.conflicts = new Map();
+    }
+    
+    addDependency(name, version, type = 'dependency') {
+        if (!this.dependencies.has(name)) {
+            this.dependencies.set(name, []);
+        }
+        
+        this.dependencies.get(name).push({ version, type });
+        this.checkConflicts(name);
+    }
+    
+    checkConflicts(name) {
+        const versions = this.dependencies.get(name);
+        if (versions.length > 1) {
+            const conflicts = this.findVersionConflicts(versions);
+            if (conflicts.length > 0) {
+                this.conflicts.set(name, conflicts);
+            }
+        }
+    }
+    
+    findVersionConflicts(versions) {
+        // Simplified conflict detection
+        const conflicts = [];
+        for (let i = 0; i < versions.length; i++) {
+            for (let j = i + 1; j < versions.length; j++) {
+                if (!this.isCompatible(versions[i].version, versions[j].version)) {
+                    conflicts.push({
+                        version1: versions[i].version,
+                        version2: versions[j].version
+                    });
+                }
+            }
+        }
+        return conflicts;
+    }
+    
+    isCompatible(version1, version2) {
+        // Simplified compatibility check
+        const v1 = this.parseVersion(version1);
+        const v2 = this.parseVersion(version2);
+        
+        // Same major version is compatible
+        return v1.major === v2.major;
+    }
+    
+    parseVersion(version) {
+        const match = version.match(/^(\d+)\.(\d+)\.(\d+)/);
+        return {
+            major: parseInt(match[1]),
+            minor: parseInt(match[2]),
+            patch: parseInt(match[3])
+        };
+    }
+    
+    resolveConflicts() {
+        const resolutions = new Map();
+        
+        for (const [name, conflicts] of this.conflicts) {
+            // Choose the highest version
+            const versions = this.dependencies.get(name);
+            const latestVersion = versions.reduce((latest, current) => {
+                return this.compareVersions(current.version, latest.version) > 0 
+                    ? current : latest;
+            });
+            
+            resolutions.set(name, latestVersion.version);
+        }
+        
+        return resolutions;
+    }
+    
+    compareVersions(version1, version2) {
+        const v1 = this.parseVersion(version1);
+        const v2 = this.parseVersion(version2);
+        
+        if (v1.major !== v2.major) return v1.major - v2.major;
+        if (v1.minor !== v2.minor) return v1.minor - v2.minor;
+        return v1.patch - v2.patch;
+    }
+}
+
+// Usage
+const depManager = new DependencyManager();
+depManager.addDependency('express', '^4.18.0');
+depManager.addDependency('express', '^4.19.0');
+depManager.addDependency('lodash', '4.17.21');
+
+console.log('Conflicts:', depManager.conflicts);
+console.log('Resolutions:', depManager.resolveConflicts());</code></pre>
+        
+        <h2>Module Systems</h2>
+        
+        <h3>1. CommonJS vs ESM</h3>
+        <pre><code>// CommonJS (CJS) - Default in Node.js
+// math.js
+function add(a, b) {
+    return a + b;
+}
+
+function subtract(a, b) {
+    return a - b;
+}
+
+module.exports = {
+    add,
+    subtract
+};
+
+// Or individual exports
+exports.add = add;
+exports.subtract = subtract;
+
+// main.js
+const math = require('./math');
+const { add, subtract } = require('./math');
+
+console.log(add(5, 3)); // 8
+console.log(subtract(5, 3)); // 2
+
+// ESM (ES Modules) - Modern standard
+// math.mjs
+export function add(a, b) {
+    return a + b;
+}
+
+export function subtract(a, b) {
+    return a - b;
+}
+
+// Default export
+export default {
+    add,
+    subtract
+};
+
+// main.mjs
+import math, { add, subtract } from './math.mjs';
+import * as mathUtils from './math.mjs';
+
+console.log(add(5, 3)); // 8
+console.log(subtract(5, 3)); // 2
+console.log(math.add(5, 3)); // 8
+
+// Dynamic imports
+async function loadModule() {
+    const math = await import('./math.mjs');
+    console.log(math.add(5, 3));
+}
+
+// Conditional imports
+if (process.env.NODE_ENV === 'development') {
+    const { devTools } = await import('./dev-tools.mjs');
+    devTools.init();
+}
+
+// Mixed module systems
+// cjs-to-esm.mjs (ESM importing CJS)
+import express from 'express'; // CJS module
+import { readFile } from 'fs/promises'; // ESM module
+
+// esm-to-cjs.js (CJS importing ESM)
+const { add } = await import('./math.mjs');
+console.log(add(5, 3));
+
+// Module resolution
+class ModuleResolver {
+    constructor() {
+        this.cache = new Map();
+        this.paths = this.getModulePaths();
+    }
+    
+    getModulePaths() {
+        return [
+            process.cwd() + '/node_modules',
+            process.cwd() + '/lib',
+            process.cwd() + '/src',
+            '/usr/local/lib/node_modules',
+            process.env.NODE_PATH?.split(':') || []
+        ].flat();
+    }
+    
+    resolve(moduleName, fromPath = process.cwd()) {
+        const cacheKey = `${moduleName}:${fromPath}`;
+        if (this.cache.has(cacheKey)) {
+            return this.cache.get(cacheKey);
+        }
+        
+        // Try different resolution strategies
+        const strategies = [
+            () => this.resolveAsFile(moduleName, fromPath),
+            () => this.resolveAsDirectory(moduleName, fromPath),
+            () => this.resolveNodeModules(moduleName, fromPath),
+            () => this.resolveCoreModule(moduleName)
+        ];
+        
+        for (const strategy of strategies) {
+            try {
+                const result = strategy();
+                if (result) {
+                    this.cache.set(cacheKey, result);
+                    return result;
+                }
+            } catch (error) {
+                // Continue to next strategy
+            }
+        }
+        
+        throw new Error(`Cannot resolve module: ${moduleName}`);
+    }
+    
+    resolveAsFile(moduleName, fromPath) {
+        const extensions = ['.js', '.mjs', '.json', '.node'];
+        
+        for (const ext of extensions) {
+            const filePath = require('path').join(fromPath, moduleName + ext);
+            if (require('fs').existsSync(filePath)) {
+                return filePath;
+            }
+        }
+        
+        return null;
+    }
+    
+    resolveAsDirectory(moduleName, fromPath) {
+        const dirPath = require('path').join(fromPath, moduleName);
+        const packageJsonPath = require('path').join(dirPath, 'package.json');
+        
+        if (require('fs').existsSync(packageJsonPath)) {
+            const packageJson = JSON.parse(
+                require('fs').readFileSync(packageJsonPath, 'utf8')
+            );
+            
+            const mainFile = packageJson.main || 'index.js';
+            return this.resolveAsFile(mainFile, dirPath);
+        }
+        
+        return this.resolveAsFile('index', dirPath);
+    }
+    
+    resolveNodeModules(moduleName, fromPath) {
+        let currentPath = fromPath;
+        
+        while (currentPath !== require('path').dirname(currentPath)) {
+            const nodeModulesPath = require('path').join(currentPath, 'node_modules');
+            const modulePath = require('path').join(nodeModulesPath, moduleName);
+            
+            if (require('fs').existsSync(modulePath)) {
+                return this.resolveAsDirectory(moduleName, nodeModulesPath);
+            }
+            
+            currentPath = require('path').dirname(currentPath);
+        }
+        
+        return null;
+    }
+    
+    resolveCoreModule(moduleName) {
+        const coreModules = [
+            'fs', 'path', 'http', 'https', 'url', 'querystring',
+            'crypto', 'stream', 'util', 'events', 'buffer'
+        ];
+        
+        if (coreModules.includes(moduleName)) {
+            return moduleName;
+        }
+        
+        return null;
+    }
+}
+
+// Usage
+const resolver = new ModuleResolver();
+try {
+    const resolvedPath = resolver.resolve('express');
+    console.log('Resolved path:', resolvedPath);
+} catch (error) {
+    console.error('Resolution error:', error.message);
+}</code></pre>
+        
+        <h2>Development Tools</h2>
+        
+        <h3>1. ESLint và Prettier</h3>
+        <pre><code>// .eslintrc.js
+module.exports = {
+  env: {
+    node: true,
+    es2022: true,
+    jest: true
+  },
+  extends: [
+    'eslint:recommended',
+    '@typescript-eslint/recommended'
+  ],
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    ecmaVersion: 'latest',
+    sourceType: 'module'
+  },
+  plugins: ['@typescript-eslint'],
+  rules: {
+    'no-console': 'warn',
+    'no-unused-vars': 'error',
+    'prefer-const': 'error',
+    'no-var': 'error',
+    'semi': ['error', 'always'],
+    'quotes': ['error', 'single'],
+    'indent': ['error', 2],
+    'comma-dangle': ['error', 'never'],
+    'object-curly-spacing': ['error', 'always'],
+    'array-bracket-spacing': ['error', 'never'],
+    'no-trailing-spaces': 'error',
+    'eol-last': 'error'
+  },
+  overrides: [
+    {
+      files: ['**/*.test.js', '**/*.spec.js'],
+      env: {
+        jest: true
+      },
+      rules: {
+        'no-console': 'off'
+      }
+    }
+  ]
+};
+
+// .prettierrc
+{
+  "semi": true,
+  "trailingComma": "none",
+  "singleQuote": true,
+  "printWidth": 80,
+  "tabWidth": 2,
+  "useTabs": false,
+  "bracketSpacing": true,
+  "arrowParens": "avoid",
+  "endOfLine": "lf"
+}
+
+// .prettierignore
+node_modules/
+dist/
+build/
+coverage/
+*.min.js
+*.min.css
+
+// ESLint configuration for different environments
+const eslintConfigs = {
+  // Development
+  development: {
+    extends: ['eslint:recommended'],
+    rules: {
+      'no-console': 'off',
+      'no-debugger': 'off',
+      'no-unused-vars': 'warn'
+    }
+  },
+  
+  // Production
+  production: {
+    extends: ['eslint:recommended'],
+    rules: {
+      'no-console': 'error',
+      'no-debugger': 'error',
+      'no-unused-vars': 'error'
+    }
+  },
+  
+  // Testing
+  testing: {
+    extends: ['eslint:recommended', 'plugin:jest/recommended'],
+    env: {
+      jest: true
+    },
+    rules: {
+      'no-console': 'off',
+      'jest/expect-expect': 'error',
+      'jest/no-disabled-tests': 'warn'
+    }
+  }
+};
+
+// Custom ESLint rules
+const customRules = {
+  'no-hardcoded-strings': {
+    create(context) {
+      return {
+        Literal(node) {
+          if (typeof node.value === 'string' && 
+              node.value.length > 10 && 
+              !node.value.includes('http')) {
+            context.report({
+              node,
+              message: 'Avoid hardcoded strings, use constants or i18n'
+            });
+          }
+        }
+      };
+    }
+  },
+  
+  'prefer-async-await': {
+    create(context) {
+      return {
+        CallExpression(node) {
+          if (node.callee.name === 'then' && 
+              node.parent.type === 'CallExpression') {
+            context.report({
+              node,
+              message: 'Prefer async/await over Promise.then chains'
+            });
+          }
+        }
+      };
+    }
+  }
+};
+
+// Prettier configuration with plugins
+const prettierConfig = {
+  semi: true,
+  trailingComma: 'none',
+  singleQuote: true,
+  printWidth: 80,
+  tabWidth: 2,
+  useTabs: false,
+  bracketSpacing: true,
+  arrowParens: 'avoid',
+  endOfLine: 'lf',
+  plugins: [
+    '@trivago/prettier-plugin-sort-imports',
+    'prettier-plugin-tailwindcss'
+  ],
+  importOrder: [
+    '^react$',
+    '^next/(.*)$',
+    '^@/(.*)$',
+    '^[./]'
+  ],
+  importOrderSeparation: true,
+  importOrderSortSpecifiers: true
+};</code></pre>
+        
+        <h3>2. Nodemon và Development Workflow</h3>
+        <pre><code>// nodemon.json
+{
+  "watch": ["src", "config"],
+  "ext": "js,json,mjs,ts",
+  "ignore": ["node_modules", "dist", "coverage"],
+  "exec": "node src/index.js",
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "delay": 1000,
+  "verbose": true,
+  "legacyWatch": true
+}
+
+// Development scripts
+const devScripts = {
+  // package.json scripts
+  scripts: {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "dev:debug": "nodemon --inspect src/index.js",
+    "dev:ts": "nodemon --exec ts-node src/index.ts",
+    "build": "webpack --mode production",
+    "build:dev": "webpack --mode development",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/**/*.js",
+    "lint:fix": "eslint src/**/*.js --fix",
+    "format": "prettier --write src/**/*.js",
+    "format:check": "prettier --check src/**/*.js",
+    "type-check": "tsc --noEmit",
+    "clean": "rimraf dist coverage",
+    "prepare": "husky install",
+    "precommit": "lint-staged"
+  }
+};
+
+// Development server with hot reload
+class DevServer {
+    constructor(options = {}) {
+        this.port = options.port || 3000;
+        this.watchPaths = options.watchPaths || ['src'];
+        this.restartDelay = options.restartDelay || 1000;
+        this.process = null;
+        this.watchers = new Map();
+    }
+    
+    start() {
+        console.log('Starting development server...');
+        this.startProcess();
+        this.setupWatchers();
+        this.setupGracefulShutdown();
+    }
+    
+    startProcess() {
+        const { spawn } = require('child_process');
+        
+        this.process = spawn('node', ['src/index.js'], {
+            stdio: 'inherit',
+            env: { ...process.env, NODE_ENV: 'development' }
+        });
+        
+        this.process.on('exit', (code) => {
+            console.log(`Process exited with code ${code}`);
+            if (code !== 0) {
+                this.restartProcess();
+            }
+        });
+    }
+    
+    setupWatchers() {
+        const chokidar = require('chokidar');
+        
+        this.watchPaths.forEach(path => {
+            const watcher = chokidar.watch(path, {
+                ignored: /node_modules/,
+                persistent: true
+            });
+            
+            watcher.on('change', (filePath) => {
+                console.log(`File changed: ${filePath}`);
+                this.restartProcess();
+            });
+            
+            this.watchers.set(path, watcher);
+        });
+    }
+    
+    restartProcess() {
+        if (this.process) {
+            console.log('Restarting process...');
+            this.process.kill('SIGTERM');
+            
+            setTimeout(() => {
+                this.startProcess();
+            }, this.restartDelay);
+        }
+    }
+    
+    setupGracefulShutdown() {
+        process.on('SIGINT', () => {
+            console.log('Shutting down development server...');
+            this.cleanup();
+            process.exit(0);
+        });
+        
+        process.on('SIGTERM', () => {
+            console.log('Shutting down development server...');
+            this.cleanup();
+            process.exit(0);
+        });
+    }
+    
+    cleanup() {
+        if (this.process) {
+            this.process.kill('SIGTERM');
+        }
+        
+        this.watchers.forEach(watcher => watcher.close());
+        this.watchers.clear();
+    }
+}
+
+// Usage
+const devServer = new DevServer({
+    port: 3000,
+    watchPaths: ['src', 'config'],
+    restartDelay: 1000
+});
+
+// devServer.start();
+
+// Environment configuration
+class EnvironmentConfig {
+    constructor() {
+        this.config = this.loadConfig();
+    }
+    
+    loadConfig() {
+        const env = process.env.NODE_ENV || 'development';
+        
+        const baseConfig = {
+            port: 3000,
+            host: 'localhost',
+            logLevel: 'info',
+            cors: {
+                origin: '*',
+                credentials: true
+            }
+        };
+        
+        const envConfigs = {
+            development: {
+                ...baseConfig,
+                logLevel: 'debug',
+                cors: {
+                    origin: ['http://localhost:3000', 'http://localhost:3001'],
+                    credentials: true
+                },
+                database: {
+                    host: 'localhost',
+                    port: 5432,
+                    name: 'dev_db'
+                }
+            },
+            
+            production: {
+                ...baseConfig,
+                port: process.env.PORT || 8080,
+                logLevel: 'warn',
+                cors: {
+                    origin: process.env.ALLOWED_ORIGINS?.split(',') || [],
+                    credentials: true
+                },
+                database: {
+                    host: process.env.DB_HOST,
+                    port: process.env.DB_PORT,
+                    name: process.env.DB_NAME
+                }
+            },
+            
+            test: {
+                ...baseConfig,
+                port: 0, // Random port
+                logLevel: 'error',
+                database: {
+                    host: 'localhost',
+                    port: 5432,
+                    name: 'test_db'
+                }
+            }
+        };
+        
+        return { ...baseConfig, ...envConfigs[env] };
+    }
+    
+    get(key) {
+        return key.split('.').reduce((obj, k) => obj?.[k], this.config);
+    }
+    
+    set(key, value) {
+        const keys = key.split('.');
+        const lastKey = keys.pop();
+        const target = keys.reduce((obj, k) => obj[k] = obj[k] || {}, this.config);
+        target[lastKey] = value;
+    }
+}
+
+// Usage
+const config = new EnvironmentConfig();
+console.log('Port:', config.get('port'));
+console.log('Database host:', config.get('database.host'));</code></pre>
+        
+        <h2>Node.js Ecosystem</h2>
+        
+        <h3>1. Popular Packages và Frameworks</h3>
+        <pre><code>// Express.js - Web framework
+const express = require('express');
+const app = express();
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
+
+// Custom middleware
+const logger = (req, res, next) => {
+    console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
+    next();
+};
+
+app.use(logger);
+
+// Routes
+app.get('/', (req, res) => {
+    res.json({ message: 'Hello World!' });
+});
+
+app.get('/api/users', (req, res) => {
+    res.json([
+        { id: 1, name: 'John Doe' },
+        { id: 2, name: 'Jane Smith' }
+    ]);
+});
+
+app.post('/api/users', (req, res) => {
+    const { name, email } = req.body;
+    // Create user logic
+    res.status(201).json({ id: 3, name, email });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Something went wrong!' });
+});
+
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({ error: 'Route not found' });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
+// Socket.io - Real-time communication
+const { Server } = require('socket.io');
+const http = require('http');
+
+const server = http.createServer();
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
+
+io.on('connection', (socket) => {
+    console.log('User connected:', socket.id);
+    
+    socket.on('join-room', (roomId) => {
+        socket.join(roomId);
+        socket.to(roomId).emit('user-joined', socket.id);
+    });
+    
+    socket.on('send-message', (data) => {
+        socket.to(data.roomId).emit('receive-message', {
+            ...data,
+            senderId: socket.id,
+            timestamp: Date.now()
+        });
+    });
+    
+    socket.on('disconnect', () => {
+        console.log('User disconnected:', socket.id);
+    });
+});
+
+server.listen(3001, () => {
+    console.log('Socket server running on port 3001');
+});
+
+// Mongoose - MongoDB ODM
+const mongoose = require('mongoose');
+
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/myapp', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+});
+
+// Define schema
+const userSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    email: {
+        type: String,
+        required: true,
+        unique: true,
+        lowercase: true
+    },
+    age: {
+        type: Number,
+        min: 0,
+        max: 120
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+// Add methods
+userSchema.methods.getDisplayName = function() {
+    return `${this.name} (${this.email})`;
+};
+
+// Add statics
+userSchema.statics.findByEmail = function(email) {
+    return this.findOne({ email: email.toLowerCase() });
+};
+
+// Create model
+const User = mongoose.model('User', userSchema);
+
+// Usage
+async function createUser() {
+    try {
+        const user = new User({
+            name: 'John Doe',
+            email: 'john@example.com',
+            age: 30
+        });
+        
+        await user.save();
+        console.log('User created:', user.getDisplayName());
+    } catch (error) {
+        console.error('Error creating user:', error);
+    }
+}
+
+// JWT Authentication
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+
+class AuthService {
+    constructor() {
+        this.secretKey = process.env.JWT_SECRET || 'your-secret-key';
+        this.expiresIn = '24h';
+    }
+    
+    async hashPassword(password) {
+        const saltRounds = 12;
+        return bcrypt.hash(password, saltRounds);
+    }
+    
+    async comparePassword(password, hash) {
+        return bcrypt.compare(password, hash);
+    }
+    
+    generateToken(payload) {
+        return jwt.sign(payload, this.secretKey, { expiresIn: this.expiresIn });
+    }
+    
+    verifyToken(token) {
+        try {
+            return jwt.verify(token, this.secretKey);
+        } catch (error) {
+            throw new Error('Invalid token');
+        }
+    }
+    
+    async authenticateUser(email, password) {
+        const user = await User.findByEmail(email);
+        if (!user) {
+            throw new Error('User not found');
+        }
+        
+        const isValidPassword = await this.comparePassword(password, user.password);
+        if (!isValidPassword) {
+            throw new Error('Invalid password');
+        }
+        
+        return user;
+    }
+    
+    async login(email, password) {
+        const user = await this.authenticateUser(email, password);
+        
+        const token = this.generateToken({
+            userId: user._id,
+            email: user.email
+        });
+        
+        return {
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email
+            },
+            token
+        };
+    }
+}
+
+// Usage
+const authService = new AuthService();
+
+// Express middleware for JWT
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (!token) {
+        return res.status(401).json({ error: 'Access token required' });
+    }
+    
+    try {
+        const decoded = authService.verifyToken(token);
+        req.user = decoded;
+        next();
+    } catch (error) {
+        return res.status(403).json({ error: 'Invalid token' });
+    }
+};
+
+// Protected route
+app.get('/api/profile', authenticateToken, (req, res) => {
+    res.json({ user: req.user });
+});</code></pre>
+        
+        <h3>2. Testing với Jest</h3>
+        <pre><code>// jest.config.js
+module.exports = {
+  testEnvironment: 'node',
+  testMatch: ['**/__tests__/**/*.js', '**/?(*.)+(spec|test).js'],
+  collectCoverageFrom: [
+    'src/**/*.js',
+    '!src/**/*.test.js',
+    '!src/**/*.spec.js'
+  ],
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html'],
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
+  testTimeout: 10000,
+  verbose: true
+};
+
+// tests/setup.js
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
+
+let mongoServer;
+
+beforeAll(async () => {
+    mongoServer = await MongoMemoryServer.create();
+    const mongoUri = mongoServer.getUri();
+    await mongoose.connect(mongoUri);
+});
+
+afterAll(async () => {
+    await mongoose.disconnect();
+    await mongoServer.stop();
+});
+
+afterEach(async () => {
+    const collections = mongoose.connection.collections;
+    for (const key in collections) {
+        const collection = collections[key];
+        await collection.deleteMany({});
+    }
+});
+
+// tests/auth.test.js
+const request = require('supertest');
+const app = require('../src/app');
+const User = require('../src/models/User');
+const authService = require('../src/services/AuthService');
+
+describe('Authentication', () => {
+    beforeEach(async () => {
+        await User.deleteMany({});
+    });
+    
+    describe('POST /api/auth/register', () => {
+        it('should register a new user', async () => {
+            const userData = {
+                name: 'John Doe',
+                email: 'john@example.com',
+                password: 'password123'
+            };
+            
+            const response = await request(app)
+                .post('/api/auth/register')
+                .send(userData)
+                .expect(201);
+            
+            expect(response.body).toHaveProperty('user');
+            expect(response.body).toHaveProperty('token');
+            expect(response.body.user.email).toBe(userData.email);
+        });
+        
+        it('should not register user with existing email', async () => {
+            const userData = {
+                name: 'John Doe',
+                email: 'john@example.com',
+                password: 'password123'
+            };
+            
+            // Create first user
+            await request(app)
+                .post('/api/auth/register')
+                .send(userData);
+            
+            // Try to create second user with same email
+            const response = await request(app)
+                .post('/api/auth/register')
+                .send(userData)
+                .expect(400);
+            
+            expect(response.body).toHaveProperty('error');
+        });
+    });
+    
+    describe('POST /api/auth/login', () => {
+        beforeEach(async () => {
+            const userData = {
+                name: 'John Doe',
+                email: 'john@example.com',
+                password: 'password123'
+            };
+            
+            await request(app)
+                .post('/api/auth/register')
+                .send(userData);
+        });
+        
+        it('should login with valid credentials', async () => {
+            const loginData = {
+                email: 'john@example.com',
+                password: 'password123'
+            };
+            
+            const response = await request(app)
+                .post('/api/auth/login')
+                .send(loginData)
+                .expect(200);
+            
+            expect(response.body).toHaveProperty('user');
+            expect(response.body).toHaveProperty('token');
+        });
+        
+        it('should not login with invalid credentials', async () => {
+            const loginData = {
+                email: 'john@example.com',
+                password: 'wrongpassword'
+            };
+            
+            const response = await request(app)
+                .post('/api/auth/login')
+                .send(loginData)
+                .expect(401);
+            
+            expect(response.body).toHaveProperty('error');
+        });
+    });
+    
+    describe('GET /api/profile', () => {
+        let authToken;
+        
+        beforeEach(async () => {
+            const userData = {
+                name: 'John Doe',
+                email: 'john@example.com',
+                password: 'password123'
+            };
+            
+            const response = await request(app)
+                .post('/api/auth/register')
+                .send(userData);
+            
+            authToken = response.body.token;
+        });
+        
+        it('should get profile with valid token', async () => {
+            const response = await request(app)
+                .get('/api/profile')
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(200);
+            
+            expect(response.body).toHaveProperty('user');
+            expect(response.body.user.email).toBe('john@example.com');
+        });
+        
+        it('should not get profile without token', async () => {
+            await request(app)
+                .get('/api/profile')
+                .expect(401);
+        });
+        
+        it('should not get profile with invalid token', async () => {
+            await request(app)
+                .get('/api/profile')
+                .set('Authorization', 'Bearer invalid-token')
+                .expect(403);
+        });
+    });
+});
+
+// tests/services/AuthService.test.js
+const authService = require('../../src/services/AuthService');
+const User = require('../../src/models/User');
+
+describe('AuthService', () => {
+    describe('hashPassword', () => {
+        it('should hash password correctly', async () => {
+            const password = 'password123';
+            const hash = await authService.hashPassword(password);
+            
+            expect(hash).toBeDefined();
+            expect(hash).not.toBe(password);
+            expect(hash.length).toBeGreaterThan(50);
+        });
+    });
+    
+    describe('comparePassword', () => {
+        it('should compare password correctly', async () => {
+            const password = 'password123';
+            const hash = await authService.hashPassword(password);
+            
+            const isValid = await authService.comparePassword(password, hash);
+            expect(isValid).toBe(true);
+            
+            const isInvalid = await authService.comparePassword('wrongpassword', hash);
+            expect(isInvalid).toBe(false);
+        });
+    });
+    
+    describe('generateToken', () => {
+        it('should generate valid token', () => {
+            const payload = { userId: '123', email: 'test@example.com' };
+            const token = authService.generateToken(payload);
+            
+            expect(token).toBeDefined();
+            expect(typeof token).toBe('string');
+            
+            const decoded = authService.verifyToken(token);
+            expect(decoded.userId).toBe(payload.userId);
+            expect(decoded.email).toBe(payload.email);
+        });
+    });
+    
+    describe('authenticateUser', () => {
+        beforeEach(async () => {
+            await User.deleteMany({});
+        });
+        
+        it('should authenticate valid user', async () => {
+            const password = 'password123';
+            const hashedPassword = await authService.hashPassword(password);
+            
+            const user = new User({
+                name: 'John Doe',
+                email: 'john@example.com',
+                password: hashedPassword
+            });
+            await user.save();
+            
+            const authenticatedUser = await authService.authenticateUser(
+                'john@example.com',
+                password
+            );
+            
+            expect(authenticatedUser).toBeDefined();
+            expect(authenticatedUser.email).toBe('john@example.com');
+        });
+        
+        it('should throw error for invalid user', async () => {
+            await expect(
+                authService.authenticateUser('nonexistent@example.com', 'password123')
+            ).rejects.toThrow('User not found');
+        });
+        
+        it('should throw error for invalid password', async () => {
+            const password = 'password123';
+            const hashedPassword = await authService.hashPassword(password);
+            
+            const user = new User({
+                name: 'John Doe',
+                email: 'john@example.com',
+                password: hashedPassword
+            });
+            await user.save();
+            
+            await expect(
+                authService.authenticateUser('john@example.com', 'wrongpassword')
+            ).rejects.toThrow('Invalid password');
+        });
+    });
+});
+
+// Mocking external services
+const axios = require('axios');
+const weatherService = require('../../src/services/WeatherService');
+
+jest.mock('axios');
+
+describe('WeatherService', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+    
+    it('should fetch weather data', async () => {
+        const mockWeatherData = {
+            temperature: 25,
+            humidity: 60,
+            description: 'Sunny'
+        };
+        
+        axios.get.mockResolvedValue({
+            data: mockWeatherData
+        });
+        
+        const result = await weatherService.getWeather('London');
+        
+        expect(axios.get).toHaveBeenCalledWith(
+            expect.stringContaining('weather'),
+            expect.objectContaining({
+                params: expect.objectContaining({
+                    q: 'London'
+                })
+            })
+        );
+        
+        expect(result).toEqual(mockWeatherData);
+    });
+    
+    it('should handle API errors', async () => {
+        axios.get.mockRejectedValue(new Error('API Error'));
+        
+        await expect(weatherService.getWeather('London')).rejects.toThrow('API Error');
+    });
+});
+
+// Performance testing
+describe('Performance Tests', () => {
+    it('should handle concurrent requests', async () => {
+        const requests = Array.from({ length: 100 }, () =>
+            request(app)
+                .get('/api/users')
+                .expect(200)
+        );
+        
+        const startTime = Date.now();
+        await Promise.all(requests);
+        const endTime = Date.now();
+        
+        const duration = endTime - startTime;
+        expect(duration).toBeLessThan(5000); // Should complete within 5 seconds
+    });
+    
+    it('should handle large payloads', async () => {
+        const largeData = {
+            items: Array.from({ length: 1000 }, (_, i) => ({
+                id: i,
+                name: `Item ${i}`,
+                description: 'A'.repeat(1000)
+            }))
+        };
+        
+        const response = await request(app)
+            .post('/api/bulk-create')
+            .send(largeData)
+            .expect(200);
+        
+        expect(response.body).toHaveProperty('created');
+        expect(response.body.created).toBe(1000);
+    });
+});</code></pre>
+        
+        <h2>Production Deployment</h2>
+        
+        <h3>1. Docker và Containerization</h3>
+        <pre><code># Dockerfile
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy source code
+COPY . .
+
+# Build application
+RUN npm run build
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
+
+# Change ownership
+RUN chown -R nextjs:nodejs /app
+USER nextjs
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
+
+# Start application
+CMD ["npm", "start"]
+
+# docker-compose.yml
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://user:password@db:5432/myapp
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=myapp
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+# nginx.conf
+events {
+    worker_connections 1024;
+}
+
+http {
+    upstream app {
+        server app:3000;
+    }
+    
+    server {
+        listen 80;
+        server_name your-domain.com;
+        
+        # Redirect HTTP to HTTPS
+        return 301 https://$server_name$request_uri;
+    }
+    
+    server {
+        listen 443 ssl http2;
+        server_name your-domain.com;
+        
+        ssl_certificate /etc/nginx/ssl/cert.pem;
+        ssl_certificate_key /etc/nginx/ssl/key.pem;
+        
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512;
+        ssl_prefer_server_ciphers off;
+        
+        # Security headers
+        add_header X-Frame-Options DENY;
+        add_header X-Content-Type-Options nosniff;
+        add_header X-XSS-Protection "1; mode=block";
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        
+        # Gzip compression
+        gzip on;
+        gzip_vary on;
+        gzip_min_length 1024;
+        gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
+        
+        location / {
+            proxy_pass http://app;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_cache_bypass $http_upgrade;
+        }
+        
+        # Static files
+        location /static/ {
+            alias /app/public/;
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+        }
+    }
+}
+
+# Production deployment script
+#!/bin/bash
+
+# deploy.sh
+set -e
+
+echo "Starting deployment..."
+
+# Build and push Docker image
+docker build -t myapp:latest .
+docker tag myapp:latest registry.example.com/myapp:latest
+docker push registry.example.com/myapp:latest
+
+# Deploy to production
+ssh production-server << EOF
+    # Pull latest image
+    docker pull registry.example.com/myapp:latest
+    
+    # Stop existing containers
+    docker-compose down
+    
+    # Start new containers
+    docker-compose up -d
+    
+    # Run database migrations
+    docker-compose exec app npm run migrate
+    
+    # Health check
+    sleep 30
+    curl -f http://localhost:3000/health || exit 1
+    
+    echo "Deployment completed successfully!"
+EOF
+
+echo "Deployment finished!"</code></pre>
+        
+        <h3>2. Monitoring và Logging</h3>
+        <pre><code>// Logging configuration
+const winston = require('winston');
+const { combine, timestamp, errors, json, printf, colorize } = winston.format;
+
+// Custom format
+const customFormat = printf(({ level, message, timestamp, stack, ...meta }) => {
+    let log = `${timestamp} [${level}]: ${message}`;
+    
+    if (stack) {
+        log += `\n${stack}`;
+    }
+    
+    if (Object.keys(meta).length > 0) {
+        log += `\n${JSON.stringify(meta, null, 2)}`;
+    }
+    
+    return log;
+});
+
+// Create logger
+const logger = winston.createLogger({
+    level: process.env.LOG_LEVEL || 'info',
+    format: combine(
+        timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+        errors({ stack: true }),
+        json()
+    ),
+    defaultMeta: { service: 'myapp' },
+    transports: [
+        // Console transport
+        new winston.transports.Console({
+            format: combine(
+                colorize(),
+                timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+                customFormat
+            )
+        }),
+        
+        // File transports
+        new winston.transports.File({
+            filename: 'logs/error.log',
+            level: 'error',
+            maxsize: 5242880, // 5MB
+            maxFiles: 5
+        }),
+        
+        new winston.transports.File({
+            filename: 'logs/combined.log',
+            maxsize: 5242880, // 5MB
+            maxFiles: 5
+        })
+    ]
+});
+
+// Production logging
+if (process.env.NODE_ENV === 'production') {
+    logger.add(new winston.transports.Console({
+        format: winston.format.simple()
+    }));
+}
+
+// Usage
+logger.info('Application started');
+logger.error('Database connection failed', { error: 'Connection timeout' });
+logger.warn('High memory usage detected', { memory: '85%' });
+
+// Performance monitoring
+const prometheus = require('prom-client');
+
+// Create metrics
+const httpRequestDuration = new prometheus.Histogram({
+    name: 'http_request_duration_seconds',
+    help: 'Duration of HTTP requests in seconds',
+    labelNames: ['method', 'route', 'status_code'],
+    buckets: [0.1, 0.3, 0.5, 0.7, 1, 3, 5, 7, 10]
+});
+
+const httpRequestTotal = new prometheus.Counter({
+    name: 'http_requests_total',
+    help: 'Total number of HTTP requests',
+    labelNames: ['method', 'route', 'status_code']
+});
+
+const activeConnections = new prometheus.Gauge({
+    name: 'active_connections',
+    help: 'Number of active connections'
+});
+
+const memoryUsage = new prometheus.Gauge({
+    name: 'memory_usage_bytes',
+    help: 'Memory usage in bytes',
+    labelNames: ['type']
+});
+
+// Middleware for metrics collection
+const metricsMiddleware = (req, res, next) => {
+    const start = Date.now();
+    
+    res.on('finish', () => {
+        const duration = (Date.now() - start) / 1000;
+        const labels = {
+            method: req.method,
+            route: req.route?.path || req.path,
+            status_code: res.statusCode
+        };
+        
+        httpRequestDuration.observe(labels, duration);
+        httpRequestTotal.inc(labels);
+    });
+    
+    next();
+};
+
+// Memory monitoring
+setInterval(() => {
+    const memUsage = process.memoryUsage();
+    
+    memoryUsage.set({ type: 'rss' }, memUsage.rss);
+    memoryUsage.set({ type: 'heapTotal' }, memUsage.heapTotal);
+    memoryUsage.set({ type: 'heapUsed' }, memUsage.heapUsed);
+    memoryUsage.set({ type: 'external' }, memUsage.external);
+}, 5000);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    const health = {
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        version: process.env.npm_package_version || '1.0.0'
+    };
+    
+    res.json(health);
+});
+
+// Metrics endpoint
+app.get('/metrics', (req, res) => {
+    res.set('Content-Type', prometheus.register.contentType);
+    res.end(prometheus.register.metrics());
+});
+
+// Error tracking
+const Sentry = require('@sentry/node');
+
+Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV,
+    tracesSampleRate: 0.1
+});
+
+// Error handling middleware
+app.use(Sentry.requestHandler());
+app.use(Sentry.tracingHandler());
+
+app.use((err, req, res, next) => {
+    Sentry.captureException(err);
+    
+    logger.error('Unhandled error', {
+        error: err.message,
+        stack: err.stack,
+        url: req.url,
+        method: req.method,
+        userAgent: req.get('User-Agent')
+    });
+    
+    res.status(500).json({
+        error: 'Internal server error',
+        requestId: req.id
+    });
+});
+
+// Process monitoring
+process.on('uncaughtException', (err) => {
+    logger.error('Uncaught Exception', { error: err.message, stack: err.stack });
+    Sentry.captureException(err);
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection', { reason, promise });
+    Sentry.captureException(reason);
+});
+
+// Graceful shutdown
+const gracefulShutdown = (signal) => {
+    logger.info(`Received ${signal}, starting graceful shutdown`);
+    
+    server.close(() => {
+        logger.info('HTTP server closed');
+        
+        // Close database connections
+        mongoose.connection.close(() => {
+            logger.info('Database connection closed');
+            process.exit(0);
+        });
+    });
+    
+    // Force close after 30 seconds
+    setTimeout(() => {
+        logger.error('Forced shutdown');
+        process.exit(1);
+    }, 30000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));</code></pre>
+        
+        <h2>Best Practices</h2>
+        
+        <h3>1. Security Best Practices</h3>
+        <pre><code>// Security middleware
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const cors = require('cors');
+
+// Security headers
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'"],
+            imgSrc: ["'self'", "data:", "https:"],
+        },
+    },
+    hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true
+    }
+}));
+
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+app.use('/api/', limiter);
+
+// CORS configuration
+app.use(cors({
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Input validation
+const Joi = require('joi');
+
+const validateRequest = (schema) => {
+    return (req, res, next) => {
+        const { error } = schema.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+                error: 'Validation error',
+                details: error.details.map(d => d.message)
+            });
+        }
+        next();
+    };
+};
+
+// Validation schemas
+const userSchema = Joi.object({
+    name: Joi.string().min(2).max(50).required(),
+    email: Joi.string().email().required(),
+    password: Joi.string().min(8).pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/).required()
+});
+
+app.post('/api/users', validateRequest(userSchema), (req, res) => {
+    // Handle user creation
+});
+
+// SQL injection prevention
+const { Pool } = require('pg');
+
+class DatabaseService {
+    constructor() {
+        this.pool = new Pool({
+            connectionString: process.env.DATABASE_URL,
+            ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        });
+    }
+    
+    async query(text, params) {
+        const start = Date.now();
+        try {
+            const result = await this.pool.query(text, params);
+            const duration = Date.now() - start;
+            logger.info('Query executed', { text, duration, rows: result.rowCount });
+            return result;
+        } catch (error) {
+            logger.error('Database query error', { text, error: error.message });
+            throw error;
+        }
+    }
+    
+    // Safe parameterized queries
+    async getUserById(id) {
+        const query = 'SELECT * FROM users WHERE id = $1';
+        const result = await this.query(query, [id]);
+        return result.rows[0];
+    }
+    
+    async createUser(userData) {
+        const query = `
+            INSERT INTO users (name, email, password_hash)
+            VALUES ($1, $2, $3)
+            RETURNING id, name, email, created_at
+        `;
+        const result = await this.query(query, [
+            userData.name,
+            userData.email,
+            userData.passwordHash
+        ]);
+        return result.rows[0];
+    }
+}
+
+// Password security
+const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+
+class PasswordService {
+    constructor() {
+        this.saltRounds = 12;
+    }
+    
+    async hashPassword(password) {
+        return bcrypt.hash(password, this.saltRounds);
+    }
+    
+    async comparePassword(password, hash) {
+        return bcrypt.compare(password, hash);
+    }
+    
+    generateSecureToken() {
+        return crypto.randomBytes(32).toString('hex');
+    }
+    
+    generatePasswordResetToken() {
+        return crypto.randomBytes(20).toString('hex');
+    }
+}
+
+// Session security
+const session = require('express-session');
+const RedisStore = require('connect-redis')(session);
+
+app.use(session({
+    store: new RedisStore({
+        client: redisClient,
+        prefix: 'sess:'
+    }),
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: 'strict'
+    }
+}));
+
+// CSRF protection
+const csrf = require('csurf');
+
+const csrfProtection = csrf({
+    cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+    }
+});
+
+app.use(csrfProtection);
+
+// Environment variables validation
+const requiredEnvVars = [
+    'NODE_ENV',
+    'DATABASE_URL',
+    'JWT_SECRET',
+    'SESSION_SECRET'
+];
+
+requiredEnvVars.forEach(envVar => {
+    if (!process.env[envVar]) {
+        logger.error(`Missing required environment variable: ${envVar}`);
+        process.exit(1);
+    }
+});
+
+// File upload security
+const multer = require('multer');
+const path = require('path');
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/');
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const fileFilter = (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+        return cb(null, true);
+    } else {
+        cb(new Error('Invalid file type'));
+    }
+};
+
+const upload = multer({
+    storage,
+    fileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB
+    }
+});</code></pre>
+        
+        <h2>Kết luận</h2>
+        <p>
+          Node.js và npm tạo nên một ecosystem mạnh mẽ cho việc phát triển ứng dụng JavaScript:
+        </p>
+        <ul class="list">
+          <li><strong>Event Loop</strong> và non-blocking I/O cho performance cao</li>
+          <li><strong>Worker Threads</strong> cho CPU-intensive tasks</li>
+          <li><strong>npm ecosystem</strong> với hàng triệu packages</li>
+          <li><strong>Module systems</strong> CJS và ESM</li>
+          <li><strong>Development tools</strong> ESLint, Prettier, Jest</li>
+          <li><strong>Production deployment</strong> với Docker và monitoring</li>
+          <li><strong>Security best practices</strong> cho ứng dụng production</li>
+        </ul>
+        <p>
+          Việc nắm vững Node.js và npm giúp bạn xây dựng các ứng dụng server-side hiệu quả, 
+          scalable và secure.
+        </p>
+    </main>
+  </body>
+  </html>
+
+

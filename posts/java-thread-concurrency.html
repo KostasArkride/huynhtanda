@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Java: luồng và đồng bộ hoá</title>
+    <meta name="description" content="Giới thiệu Thread, ExecutorService và synchronized.">
+    <link rel="stylesheet" href="../css/styles.css">
+  </head>
+  <body>
+    <main class="container post">
+      <a class="back" href="../blog.html">← Quay lại Blog</a>
+      <h1>Java: luồng và đồng bộ hoá</h1>
+      <div class="meta">Chủ đề: <span class="tag tag-java">Java</span></div>
+      <article class="card">
+        <h2>Giới thiệu về Concurrency trong Java</h2>
+        <p>
+          Concurrency là khả năng thực thi nhiều tác vụ đồng thời trong một chương trình. 
+          Trong Java, concurrency được thực hiện thông qua Thread API và các công cụ 
+          đồng bộ hóa để đảm bảo tính nhất quán dữ liệu và tránh race conditions.
+        </p>
+        
+        <h2>Thread Fundamentals</h2>
+        
+        <h3>1. Tạo và Quản lý Thread</h3>
+        <pre><code>// Cách 1: Extend Thread class
+public class WorkerThread extends Thread {
+    private final String name;
+    
+    public WorkerThread(String name) {
+        this.name = name;
+    }
+    
+    @Override
+    public void run() {
+        System.out.println("Thread " + name + " đang chạy");
+        try {
+            Thread.sleep(2000); // Simulate work
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.out.println("Thread " + name + " bị interrupt");
+        }
+        System.out.println("Thread " + name + " hoàn thành");
+    }
+}
+
+// Cách 2: Implement Runnable interface
+public class Task implements Runnable {
+    private final int taskId;
+    
+    public Task(int taskId) {
+        this.taskId = taskId;
+    }
+    
+    @Override
+    public void run() {
+        System.out.println("Task " + taskId + " đang thực thi");
+        // Perform work
+    }
+}
+
+// Sử dụng
+public class ThreadExample {
+    public static void main(String[] args) {
+        // Tạo thread bằng cách extend Thread
+        WorkerThread thread1 = new WorkerThread("Worker-1");
+        thread1.start();
+        
+        // Tạo thread bằng cách implement Runnable
+        Thread thread2 = new Thread(new Task(1));
+        thread2.start();
+        
+        // Lambda expression (Java 8+)
+        Thread thread3 = new Thread(() -> {
+            System.out.println("Lambda thread đang chạy");
+        });
+        thread3.start();
+    }
+}</code></pre>
+        
+        <h3>2. Thread States và Lifecycle</h3>
+        <pre><code>public class ThreadStateExample {
+    public static void main(String[] args) throws InterruptedException {
+        Thread thread = new Thread(() -> {
+            try {
+                Thread.sleep(1000);
+                synchronized (ThreadStateExample.class) {
+                    ThreadStateExample.class.wait();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        
+        System.out.println("NEW: " + thread.getState());
+        
+        thread.start();
+        System.out.println("RUNNABLE: " + thread.getState());
+        
+        Thread.sleep(500);
+        System.out.println("TIMED_WAITING: " + thread.getState());
+        
+        Thread.sleep(1000);
+        synchronized (ThreadStateExample.class) {
+            System.out.println("BLOCKED: " + thread.getState());
+            ThreadStateExample.class.notify();
+        }
+        
+        thread.join();
+        System.out.println("TERMINATED: " + thread.getState());
+    }
+}</code></pre>
+        
+        <h2>Thread Pools và ExecutorService</h2>
+        
+        <h3>1. Các loại Thread Pool</h3>
+        <pre><code>import java.util.concurrent.*;
+
+public class ThreadPoolExample {
+    public static void main(String[] args) throws InterruptedException {
+        // Fixed Thread Pool - Số lượng thread cố định
+        ExecutorService fixedPool = Executors.newFixedThreadPool(4);
+        
+        // Cached Thread Pool - Tạo thread khi cần, thu hồi khi idle
+        ExecutorService cachedPool = Executors.newCachedThreadPool();
+        
+        // Single Thread Pool - Chỉ 1 thread, đảm bảo thứ tự thực thi
+        ExecutorService singlePool = Executors.newSingleThreadExecutor();
+        
+        // Scheduled Thread Pool - Thực thi định kỳ
+        ScheduledExecutorService scheduledPool = Executors.newScheduledThreadPool(2);
+        
+        // Custom Thread Pool với ThreadFactory
+        ExecutorService customPool = Executors.newFixedThreadPool(4, r -> {
+            Thread t = new Thread(r);
+            t.setName("CustomThread-" + t.getId());
+            t.setDaemon(true);
+            return t;
+        });
+        
+        // Submit tasks
+        for (int i = 0; i < 10; i++) {
+            final int taskId = i;
+            fixedPool.submit(() -> {
+                System.out.println("Task " + taskId + " executed by " + 
+                                 Thread.currentThread().getName());
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+        }
+        
+        // Shutdown gracefully
+        fixedPool.shutdown();
+        fixedPool.awaitTermination(30, TimeUnit.SECONDS);
+    }
+}</code></pre>
+        
+        <h3>2. Future và Callable</h3>
+        <pre><code>import java.util.concurrent.*;
+
+public class FutureExample {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        
+        // Submit Callable task
+        Future<String> future = executor.submit(() -> {
+            Thread.sleep(2000);
+            return "Kết quả từ Callable";
+        });
+        
+        // Submit multiple tasks
+        List<Future<Integer>> futures = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            final int taskId = i;
+            Future<Integer> f = executor.submit(() -> {
+                Thread.sleep(1000);
+                return taskId * taskId;
+            });
+            futures.add(f);
+        }
+        
+        // Get results
+        try {
+            String result = future.get(3, TimeUnit.SECONDS);
+            System.out.println("Result: " + result);
+        } catch (TimeoutException e) {
+            System.out.println("Task timeout");
+            future.cancel(true);
+        }
+        
+        // Collect all results
+        for (Future<Integer> f : futures) {
+            System.out.println("Task result: " + f.get());
+        }
+        
+        executor.shutdown();
+    }
+}</code></pre>
+        
+        <h2>Synchronization Mechanisms</h2>
+        
+        <h3>1. Synchronized Keyword</h3>
+        <pre><code>public class SynchronizedExample {
+    private int counter = 0;
+    private final Object lock = new Object();
+    
+    // Synchronized method
+    public synchronized void incrementMethod() {
+        counter++;
+    }
+    
+    // Synchronized block
+    public void incrementBlock() {
+        synchronized (lock) {
+            counter++;
+        }
+    }
+    
+    // Static synchronized method
+    public static synchronized void staticMethod() {
+        // Synchronized on class object
+    }
+    
+    // Double-checked locking pattern
+    private volatile Singleton instance;
+    
+    public Singleton getInstance() {
+        if (instance == null) {
+            synchronized (Singleton.class) {
+                if (instance == null) {
+                    instance = new Singleton();
+                }
+            }
+        }
+        return instance;
+    }
+}</code></pre>
+        
+        <h3>2. ReentrantLock</h3>
+        <pre><code>import java.util.concurrent.locks.*;
+
+public class ReentrantLockExample {
+    private final ReentrantLock lock = new ReentrantLock();
+    private int counter = 0;
+    
+    public void increment() {
+        lock.lock();
+        try {
+            counter++;
+            System.out.println("Counter: " + counter);
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    // Try lock with timeout
+    public boolean tryIncrement() {
+        try {
+            if (lock.tryLock(1, TimeUnit.SECONDS)) {
+                try {
+                    counter++;
+                    return true;
+                } finally {
+                    lock.unlock();
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        return false;
+    }
+    
+    // Interruptible lock
+    public void interruptibleIncrement() throws InterruptedException {
+        lock.lockInterruptibly();
+        try {
+            counter++;
+        } finally {
+            lock.unlock();
+        }
+    }
+}</code></pre>
+        
+        <h3>3. ReadWriteLock</h3>
+        <pre><code>import java.util.concurrent.locks.*;
+
+public class ReadWriteLockExample {
+    private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
+    private final Map<String, String> cache = new HashMap<>();
+    
+    public String get(String key) {
+        rwLock.readLock().lock();
+        try {
+            return cache.get(key);
+        } finally {
+            rwLock.readLock().unlock();
+        }
+    }
+    
+    public void put(String key, String value) {
+        rwLock.writeLock().lock();
+        try {
+            cache.put(key, value);
+        } finally {
+            rwLock.writeLock().unlock();
+        }
+    }
+    
+    public void clear() {
+        rwLock.writeLock().lock();
+        try {
+            cache.clear();
+        } finally {
+            rwLock.writeLock().unlock();
+        }
+    }
+}</code></pre>
+        
+        <h2>Atomic Operations</h2>
+        
+        <h3>1. Atomic Variables</h3>
+        <pre><code>import java.util.concurrent.atomic.*;
+
+public class AtomicExample {
+    private final AtomicInteger counter = new AtomicInteger(0);
+    private final AtomicLong timestamp = new AtomicLong(System.currentTimeMillis());
+    private final AtomicReference<String> status = new AtomicReference<>("INIT");
+    
+    public void incrementCounter() {
+        // Atomic increment
+        int newValue = counter.incrementAndGet();
+        System.out.println("New counter value: " + newValue);
+    }
+    
+    public void updateTimestamp() {
+        // Compare and swap
+        long current = timestamp.get();
+        long newTime = System.currentTimeMillis();
+        if (timestamp.compareAndSet(current, newTime)) {
+            System.out.println("Timestamp updated successfully");
+        }
+    }
+    
+    public void updateStatus(String newStatus) {
+        // Atomic reference update
+        String oldStatus = status.getAndSet(newStatus);
+        System.out.println("Status changed from " + oldStatus + " to " + newStatus);
+    }
+    
+    // Atomic operations on arrays
+    private final AtomicIntegerArray array = new AtomicIntegerArray(10);
+    
+    public void updateArray(int index, int value) {
+        array.set(index, value);
+    }
+    
+    public int incrementArrayElement(int index) {
+        return array.incrementAndGet(index);
+    }
+}</code></pre>
+        
+        <h2>Concurrent Collections</h2>
+        
+        <h3>1. Thread-Safe Collections</h3>
+        <pre><code>import java.util.concurrent.*;
+
+public class ConcurrentCollectionsExample {
+    public static void main(String[] args) {
+        // ConcurrentHashMap - Thread-safe HashMap
+        ConcurrentHashMap<String, Integer> concurrentMap = new ConcurrentHashMap<>();
+        concurrentMap.put("key1", 1);
+        concurrentMap.putIfAbsent("key2", 2);
+        
+        // ConcurrentLinkedQueue - Thread-safe queue
+        ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue<>();
+        queue.offer("item1");
+        queue.offer("item2");
+        
+        // BlockingQueue implementations
+        BlockingQueue<String> blockingQueue = new ArrayBlockingQueue<>(10);
+        
+        // Producer
+        new Thread(() -> {
+            try {
+                for (int i = 0; i < 5; i++) {
+                    blockingQueue.put("item-" + i);
+                    System.out.println("Produced: item-" + i);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }).start();
+        
+        // Consumer
+        new Thread(() -> {
+            try {
+                for (int i = 0; i < 5; i++) {
+                    String item = blockingQueue.take();
+                    System.out.println("Consumed: " + item);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }).start();
+        
+        // CopyOnWriteArrayList - Thread-safe ArrayList
+        CopyOnWriteArrayList<String> list = new CopyOnWriteArrayList<>();
+        list.add("item1");
+        list.add("item2");
+        
+        // ConcurrentSkipListMap - Thread-safe TreeMap
+        ConcurrentSkipListMap<String, Integer> skipListMap = new ConcurrentSkipListMap<>();
+        skipListMap.put("a", 1);
+        skipListMap.put("b", 2);
+    }
+}</code></pre>
+        
+        <h2>CompletableFuture</h2>
+        
+        <h3>1. Basic CompletableFuture</h3>
+        <pre><code>import java.util.concurrent.*;
+
+public class CompletableFutureExample {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        // Tạo CompletableFuture
+        CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            return "Hello from async task";
+        });
+        
+        // Chaining operations
+        CompletableFuture<String> result = future
+            .thenApply(s -> s.toUpperCase())
+            .thenApply(s -> s + "!")
+            .thenCompose(s -> CompletableFuture.supplyAsync(() -> s + " Composed"));
+        
+        System.out.println(result.get());
+        
+        // Exception handling
+        CompletableFuture<String> errorFuture = CompletableFuture
+            .supplyAsync(() -> {
+                throw new RuntimeException("Something went wrong");
+            })
+            .handle((result, throwable) -> {
+                if (throwable != null) {
+                    return "Error handled: " + throwable.getMessage();
+                }
+                return result;
+            });
+        
+        System.out.println(errorFuture.get());
+    }
+}</code></pre>
+        
+        <h3>2. Advanced CompletableFuture Patterns</h3>
+        <pre><code>import java.util.concurrent.*;
+import java.util.stream.Collectors;
+
+public class AdvancedCompletableFuture {
+    
+    // Combine multiple futures
+    public CompletableFuture<String> combineFutures() {
+        CompletableFuture<String> future1 = CompletableFuture.supplyAsync(() -> "Hello");
+        CompletableFuture<String> future2 = CompletableFuture.supplyAsync(() -> "World");
+        
+        return future1.thenCombine(future2, (s1, s2) -> s1 + " " + s2);
+    }
+    
+    // Wait for all futures to complete
+    public CompletableFuture<Void> waitForAll() {
+        List<CompletableFuture<String>> futures = List.of(
+            CompletableFuture.supplyAsync(() -> "Task 1"),
+            CompletableFuture.supplyAsync(() -> "Task 2"),
+            CompletableFuture.supplyAsync(() -> "Task 3")
+        );
+        
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+            .thenRun(() -> {
+                List<String> results = futures.stream()
+                    .map(CompletableFuture::join)
+                    .collect(Collectors.toList());
+                System.out.println("All tasks completed: " + results);
+            });
+    }
+    
+    // Race between futures
+    public CompletableFuture<String> raceFutures() {
+        CompletableFuture<String> future1 = CompletableFuture.supplyAsync(() -> {
+            try { Thread.sleep(2000); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            return "Slow task";
+        });
+        
+        CompletableFuture<String> future2 = CompletableFuture.supplyAsync(() -> {
+            try { Thread.sleep(1000); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            return "Fast task";
+        });
+        
+        return CompletableFuture.anyOf(future1, future2)
+            .thenApply(result -> (String) result);
+    }
+    
+    // Timeout handling
+    public CompletableFuture<String> withTimeout() {
+        CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
+            try {
+                Thread.sleep(5000); // Long running task
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            return "Long task completed";
+        });
+        
+        return future.orTimeout(2, TimeUnit.SECONDS)
+            .exceptionally(throwable -> "Task timed out");
+    }
+}</code></pre>
+        
+        <h2>Concurrency Patterns</h2>
+        
+        <h3>1. Producer-Consumer Pattern</h3>
+        <pre><code>import java.util.concurrent.*;
+
+public class ProducerConsumerExample {
+    private final BlockingQueue<String> queue = new ArrayBlockingQueue<>(10);
+    private final ExecutorService executor = Executors.newFixedThreadPool(4);
+    
+    public void start() {
+        // Start producers
+        for (int i = 0; i < 2; i++) {
+            executor.submit(new Producer("Producer-" + i));
+        }
+        
+        // Start consumers
+        for (int i = 0; i < 2; i++) {
+            executor.submit(new Consumer("Consumer-" + i));
+        }
+    }
+    
+    private class Producer implements Runnable {
+        private final String name;
+        
+        public Producer(String name) {
+            this.name = name;
+        }
+        
+        @Override
+        public void run() {
+            try {
+                for (int i = 0; i < 10; i++) {
+                    String item = name + "-item-" + i;
+                    queue.put(item);
+                    System.out.println(name + " produced: " + item);
+                    Thread.sleep(1000);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+    
+    private class Consumer implements Runnable {
+        private final String name;
+        
+        public Consumer(String name) {
+            this.name = name;
+        }
+        
+        @Override
+        public void run() {
+            try {
+                while (!Thread.currentThread().isInterrupted()) {
+                    String item = queue.take();
+                    System.out.println(name + " consumed: " + item);
+                    Thread.sleep(1500);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+    
+    public void shutdown() {
+        executor.shutdown();
+    }
+}</code></pre>
+        
+        <h3>2. Thread Pool với Work Stealing</h3>
+        <pre><code>import java.util.concurrent.*;
+
+public class WorkStealingExample {
+    public static void main(String[] args) throws InterruptedException {
+        // ForkJoinPool với work stealing
+        ForkJoinPool forkJoinPool = new ForkJoinPool();
+        
+        // Submit recursive tasks
+        Future<Integer> result = forkJoinPool.submit(new RecursiveTask<Integer>() {
+            @Override
+            protected Integer compute() {
+                return fibonacci(10);
+            }
+            
+            private int fibonacci(int n) {
+                if (n <= 1) return n;
+                
+                RecursiveTask<Integer> f1 = new RecursiveTask<Integer>() {
+                    @Override
+                    protected Integer compute() {
+                        return fibonacci(n - 1);
+                    }
+                };
+                
+                RecursiveTask<Integer> f2 = new RecursiveTask<Integer>() {
+                    @Override
+                    protected Integer compute() {
+                        return fibonacci(n - 2);
+                    }
+                };
+                
+                f1.fork();
+                f2.fork();
+                
+                return f1.join() + f2.join();
+            }
+        });
+        
+        try {
+            System.out.println("Fibonacci(10) = " + result.get());
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        
+        forkJoinPool.shutdown();
+    }
+}</code></pre>
+        
+        <h2>Performance và Best Practices</h2>
+        
+        <h3>1. Thread Pool Sizing</h3>
+        <pre><code>public class ThreadPoolSizing {
+    
+    // CPU-bound tasks: số threads = số CPU cores
+    public ExecutorService createCpuBoundPool() {
+        int cores = Runtime.getRuntime().availableProcessors();
+        return Executors.newFixedThreadPool(cores);
+    }
+    
+    // I/O-bound tasks: số threads có thể lớn hơn số cores
+    public ExecutorService createIoBoundPool() {
+        int cores = Runtime.getRuntime().availableProcessors();
+        return Executors.newFixedThreadPool(cores * 2);
+    }
+    
+    // Custom thread pool với monitoring
+    public ExecutorService createMonitoredPool() {
+        return new ThreadPoolExecutor(
+            2,                          // core pool size
+            10,                         // maximum pool size
+            60L, TimeUnit.SECONDS,      // keep alive time
+            new LinkedBlockingQueue<>(100), // work queue
+            new ThreadFactory() {
+                private int counter = 0;
+                @Override
+                public Thread newThread(Runnable r) {
+                    Thread t = new Thread(r, "Worker-" + ++counter);
+                    t.setDaemon(true);
+                    return t;
+                }
+            },
+            new ThreadPoolExecutor.CallerRunsPolicy() // rejection policy
+        );
+    }
+}</code></pre>
+        
+        <h3>2. Avoiding Common Pitfalls</h3>
+        <pre><code>public class ConcurrencyBestPractices {
+    
+    // ❌ Sai - Shared mutable state without synchronization
+    private int counter = 0;
+    public void badIncrement() {
+        counter++; // Race condition!
+    }
+    
+    // ✅ Đúng - Use atomic operations
+    private final AtomicInteger atomicCounter = new AtomicInteger(0);
+    public void goodIncrement() {
+        atomicCounter.incrementAndGet();
+    }
+    
+    // ❌ Sai - Deadlock potential
+    public void badTransfer(Account from, Account to, int amount) {
+        synchronized (from) {
+            synchronized (to) {
+                from.withdraw(amount);
+                to.deposit(amount);
+            }
+        }
+    }
+    
+    // ✅ Đúng - Consistent lock ordering
+    public void goodTransfer(Account from, Account to, int amount) {
+        Account first = from.getId() < to.getId() ? from : to;
+        Account second = from.getId() < to.getId() ? to : from;
+        
+        synchronized (first) {
+            synchronized (second) {
+                from.withdraw(amount);
+                to.deposit(amount);
+            }
+        }
+    }
+    
+    // ❌ Sai - Blocking in synchronized method
+    public synchronized void badMethod() {
+        try {
+            Thread.sleep(1000); // Blocks other threads!
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+    
+    // ✅ Đúng - Minimize synchronized block
+    public void goodMethod() {
+        // Do non-blocking work outside synchronized block
+        synchronized (this) {
+            // Only critical section
+        }
+        // Do blocking work outside synchronized block
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}</code></pre>
+        
+        <h2>Testing Concurrent Code</h2>
+        
+        <h3>1. Unit Testing với CountDownLatch</h3>
+        <pre><code>import org.junit.jupiter.api.Test;
+import java.util.concurrent.*;
+
+public class ConcurrencyTest {
+    
+    @Test
+    public void testConcurrentIncrement() throws InterruptedException {
+        AtomicInteger counter = new AtomicInteger(0);
+        int threadCount = 10;
+        int incrementsPerThread = 1000;
+        CountDownLatch latch = new CountDownLatch(threadCount);
+        
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        
+        for (int i = 0; i < threadCount; i++) {
+            executor.submit(() -> {
+                try {
+                    for (int j = 0; j < incrementsPerThread; j++) {
+                        counter.incrementAndGet();
+                    }
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+        
+        latch.await(10, TimeUnit.SECONDS);
+        executor.shutdown();
+        
+        assertEquals(threadCount * incrementsPerThread, counter.get());
+    }
+    
+    @Test
+    public void testDeadlockDetection() throws InterruptedException {
+        Object lock1 = new Object();
+        Object lock2 = new Object();
+        
+        CountDownLatch latch = new CountDownLatch(2);
+        
+        // Thread 1: lock1 -> lock2
+        new Thread(() -> {
+            synchronized (lock1) {
+                try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                synchronized (lock2) {
+                    latch.countDown();
+                }
+            }
+        }).start();
+        
+        // Thread 2: lock2 -> lock1 (potential deadlock)
+        new Thread(() -> {
+            synchronized (lock2) {
+                try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                synchronized (lock1) {
+                    latch.countDown();
+                }
+            }
+        }).start();
+        
+        // Test should timeout if deadlock occurs
+        assertFalse(latch.await(2, TimeUnit.SECONDS));
+    }
+}</code></pre>
+        
+        <h2>Monitoring và Debugging</h2>
+        
+        <h3>1. Thread Dump Analysis</h3>
+        <pre><code>public class ThreadMonitoring {
+    
+    public void printThreadInfo() {
+        ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+        
+        // Get all thread IDs
+        long[] threadIds = threadBean.getAllThreadIds();
+        
+        for (long threadId : threadIds) {
+            ThreadInfo threadInfo = threadBean.getThreadInfo(threadId);
+            if (threadInfo != null) {
+                System.out.println("Thread: " + threadInfo.getThreadName());
+                System.out.println("State: " + threadInfo.getThreadState());
+                System.out.println("Blocked count: " + threadInfo.getBlockedCount());
+                System.out.println("Waited count: " + threadInfo.getWaitedCount());
+                System.out.println("---");
+            }
+        }
+    }
+    
+    public void detectDeadlock() {
+        ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+        long[] deadlockedThreads = threadBean.findDeadlockedThreads();
+        
+        if (deadlockedThreads != null) {
+            System.out.println("Deadlock detected!");
+            ThreadInfo[] threadInfos = threadBean.getThreadInfo(deadlockedThreads);
+            for (ThreadInfo info : threadInfos) {
+                System.out.println("Deadlocked thread: " + info.getThreadName());
+            }
+        }
+    }
+}</code></pre>
+        
+        <h2>Kết luận</h2>
+        <p>
+          Concurrency trong Java là một chủ đề phức tạp nhưng quan trọng. 
+          Việc hiểu và áp dụng đúng các công cụ concurrency giúp:
+        </p>
+        <ul class="list">
+          <li>Tăng hiệu suất ứng dụng thông qua parallel processing</li>
+          <li>Đảm bảo tính nhất quán dữ liệu</li>
+          <li>Tránh race conditions và deadlocks</li>
+          <li>Tạo ra ứng dụng scalable và responsive</li>
+        </ul>
+        <p>
+          Hãy nhớ rằng concurrency không phải là silver bullet - 
+          hãy sử dụng nó khi thực sự cần thiết và luôn test kỹ lưỡng.
+        </p>
+    </main>
+  </body>
+  </html>
+
+
